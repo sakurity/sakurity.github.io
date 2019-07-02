@@ -1,0 +1,199 @@
+
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+<base href="https://sakurity.com" />
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Using open-uri? Check your code - you're playing with fire!</title>
+
+    <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
+    <meta name="keywords"
+          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/styles/vendor.css"/>
+    <link rel="stylesheet" href="/styles/main.css"/>
+<meta property="og:image" content="https://www.sakurity.com/images/sakurity-logo@2x.png" />
+
+
+  <link rel="canonical" href="https://sakurity.com/blog/2015/02/28/openuri.html">
+  <link rel="alternate" type="application/rss+xml" title="The Sakurity Blog" href="https://sakurity.com/blog/feed.xml" />
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+<!--[if lt IE 10]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
+    your browser</a> to improve your experience.</p>
+<![endif]-->
+
+<nav class="top-bar row" data-topbar>
+    <section class="top-bar-section">
+
+        <ul class="left">
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+        </ul>
+
+    </section>
+</nav>
+    <div class="page-content">
+      <div class="wrapper">
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Using open-uri? Check your code - you're playing with fire!</h1>
+  </header>
+
+  <article class="post-content">
+<p><a href="https://ruby-doc.org//stdlib-1.9.3/libdoc/open-uri/rdoc/OpenURI.html">Ruby’s OpenURI is an easy-to-use wrapper for net/http, net/https and net/ftp.</a> As far as I know it’s the most popular way to read URL content, make a GET request or download a file.</p>
+
+<p><code class="highlighter-rouge">require "open-uri"</code> internally patches <a href="https://ruby-doc.org//core-2.2.0/Kernel.html#method-i-open">Kernel.open</a> leaving you one step away from remote code execution and reading local files! Here are some examples:</p>
+
+<p><code class="highlighter-rouge">open(params[:url])</code> is remote code execution for url=<code class="highlighter-rouge">|ls</code> Didn’t you know if it starts with a pipe Ruby executes it?! Ouch.</p>
+
+<p><code class="highlighter-rouge">open(params[:url]) if params[:url] =~ /^https://</code> is also code execution for url=<code class="highlighter-rouge">|touch n;\nhttps://url.com</code> (<a href="https://homakov.blogspot.com/2012/05/saferweb-injects-in-various-ruby.html">broken Regexp, use \A\z</a>).</p>
+
+<p><code class="highlighter-rouge">open(URI(params[:url]))</code> reads any file on the system. url=/etc/passwd is a valid URL but open-uri calls original Kernel.open instead, because it doesn’t start with https://</p>
+
+<p>On top of that open-uri doesn’t limit number of redirects (<code class="highlighter-rouge">raise "HTTP redirection loop: #{uri}" if uri_set.include? uri.to_s</code> is not enough) and allows http: -&gt; ftp: redirects with <code class="highlighter-rouge">(/\A(?:http|ftp)\z/i =~ uri1.scheme &amp;&amp; /\A(?:http|ftp)\z/i =~ uri2.scheme)</code>. Following redirects by default is also not a great idea (<code class="highlighter-rouge">Location: https://127.0.0.1/send_bitcoins</code> and other SSRFs)</p>
+
+<p>open-uri library is a great example of really bad security design - it patches a critical system method to allow reading URLs (most likely from user input) and we don’t tell developers to be extremely careful. I’m sure in the next few weeks we will hear about severe bugs in popular ruby gems, if you guys will join my research.</p>
+
+<p>One more example: <code class="highlighter-rouge">open(params[:url]) if URI(params[:url]).scheme == 'http'</code>. Looks good, but if you manage to create a folder called “http:”, the attacker can read local files with <code class="highlighter-rouge">http:/../../../../../etc/passwd</code> (hello, CarrierWave!). Yes, unlikely the victim has such folder but it is a perfect showcase why URL validation is hard and why open-uri is a disaster for Ruby community.</p>
+
+<p>I recommend Ruby core developers to deprecate it and create <code class="highlighter-rouge">openURI</code> method instead.</p>
+
+
+<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/02/28/openuri.html" data-text="Using open-uri? Check your code - you're playing with fire!" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
+<script>
+!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script></p>
+
+<h3>Feb 28, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
+
+
+<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+  </article>
+
+
+
+
+
+
+<div id="spot-im-frame-inpage" data-post-id=""></div>
+
+
+</div></div>
+
+
+
+<div class="content">
+
+<!--<section class="inverse contact-us">
+
+    <div class="row">
+        <div class="small-12 small-text-center columns">
+            <h2>Trusted by</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.coinbase.com/">
+            <div class="client client-coinbase"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.airbnb.com/">
+            <div class="client client-airbnb"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://stripe.com/">
+                <div class="client client-stripe"></div>
+            </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.uber.com/">
+            <div class="client client-uber"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://mixpanel.com/">
+            <div class="client client-mixpanel"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://wordpress.com/">
+            <div class="client client-wordpress"></div>
+          </a>
+        </div>
+    </div>
+
+
+    <div class="section-pattern">    
+        <div class="row">
+            <div class="small-10 small-centered small-text-center columns">
+
+                <p>Reach out to us if you want to see how our security audits can
+                    help your business,<br> or if you have any questions.</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="small-12 small-centered columns small-text-center">
+                <a href="/contact" class="button large pull success">Contact</a>
+            </div>
+        </div>
+    </div>
+</section>-->
+
+</div>
+
+
+
+<footer>
+    <div class="row">
+        <div class="small-6 medium-3 large-2 columns">
+            <h4>Sakurity</h4>
+            <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+            </ul>
+        </div>
+
+
+
+        <div class="small-12 medium-6 large-8 small-text-center medium-text-right columns">
+            <div class="logo-monochrome"></div>
+            <p class="copyright">Sakurity Ltd, a Hong Kong company established in 2012.<br><a href="mailto:info@sakurity.com">info@sakurity.com</a></p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

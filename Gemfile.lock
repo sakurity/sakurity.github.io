@@ -1,0 +1,37 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    faraday (0.9.0)
+      multipart-post (>= 1.2, < 3)
+    kgio (2.10.0)
+    multipart-post (2.0.0)
+    rack (1.5.2)
+    rack-protection (1.3.2)
+      rack
+    raindrops (0.17.0)
+    rdiscount (2.1.7.1)
+    sinatra (1.3.4)
+      rack (~> 1.4)
+      rack-protection (~> 1.3)
+      tilt (~> 1.3, >= 1.3.3)
+    slim (1.3.6)
+      temple (~> 0.5.5)
+      tilt (~> 1.3.3)
+    temple (0.5.5)
+    tilt (1.3.3)
+    unicorn (5.2.0)
+      kgio (~> 2.6)
+      raindrops (~> 0.7)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  faraday
+  rdiscount
+  sinatra
+  slim
+  unicorn
+
+BUNDLED WITH
+   1.13.6

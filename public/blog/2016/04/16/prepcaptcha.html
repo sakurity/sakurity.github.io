@@ -1,0 +1,207 @@
+
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+<base href="https://sakurity.com" />
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>PrepCAPTCHA, for bots and pentesters</title>
+
+    <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
+    <meta name="keywords"
+          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/styles/vendor.css"/>
+    <link rel="stylesheet" href="/styles/main.css"/>
+<meta property="og:image" content="https://www.sakurity.com/images/sakurity-logo@2x.png" />
+
+
+  <link rel="canonical" href="https://sakurity.com/blog/2016/04/16/prepcaptcha.html">
+  <link rel="alternate" type="application/rss+xml" title="The Sakurity Blog" href="https://sakurity.com/blog/feed.xml" />
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+<!--[if lt IE 10]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
+    your browser</a> to improve your experience.</p>
+<![endif]-->
+
+<nav class="top-bar row" data-topbar>
+    <section class="top-bar-section">
+
+        <ul class="left">
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+        </ul>
+
+    </section>
+</nav>
+    <div class="page-content">
+      <div class="wrapper">
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">PrepCAPTCHA, for bots and pentesters</h1>
+  </header>
+
+  <article class="post-content">
+<p><a href="https://homakov.blogspot.com/2014/12/the-no-captcha-problem.html">The iframe bug in No CAPTCHA</a> was fixed long time ago, and now reCAPTCHA 2.0 is pretty secure and widespread. Bypassing it also got a lot harder, now it requires many solutions in a row, making bruteforce infeasible.</p>
+
+<p>But following neat trick will always be working even though it was <a href="https://homakov.blogspot.com/2013/05/the-recaptcha-problem.html">shown 3 years ago</a>.</p>
+
+<p>Before visiting reCAPTCHA-protected victim page, we get victim’s SITEKEY (client side API key for reCAPTCHA) and get challenges on our own. With bunch of prepared “solutions” (g-recaptcha-response values) that are good for ~130 seconds, it’s much easier to:</p>
+
+<ul>
+  <li>
+    <p>run a bot/script/parser/poster, and not mess with a headless browser like PhantomJS</p>
+  </li>
+  <li>
+    <p>test a race condition for reCAPTCHA-protected endpoint</p>
+  </li>
+  <li>
+    <p>buy high-demand tickets (like Burning Man or Machu Picchu) the second after they become available</p>
+  </li>
+</ul>
+
+<p><a href="https://github.com/sakurity/prepcaptcha">PrepCAPTCHA</a> is centralized Sinatra-based in-memory queue of valid reCAPTCHA solutions. Solving and using are now two separate processes:</p>
+
+<p>1) Solvers need to run JS snippet in console of the victim’s website (don’t forget to set correct SITEKEY). Solutions are added to PrepCAPTCHA queue.</p>
+
+<p>2) When your script stumbles upon a reCAPTCHA, it makes a GET request to PrepCAPTCHA.host/?sitekey=CURRENT_SITEKEY to get a valid g-recaptcha-response.</p>
+
+<p>P.S. for large volumes consider making an extension or hacking existing one to abuse real users’ cookies and get g-recaptcha-response-s on demand w/o any “solving” (1 click experience).</p>
+
+
+<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2016/04/16/prepcaptcha.html" data-text="PrepCAPTCHA, for bots and pentesters" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
+<script>
+!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script></p>
+
+<h3>Apr 16, 2016 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
+
+
+<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+  </article>
+
+
+
+
+
+
+<div id="spot-im-frame-inpage" data-post-id=""></div>
+
+
+</div></div>
+
+
+
+<div class="content">
+
+<!--<section class="inverse contact-us">
+
+    <div class="row">
+        <div class="small-12 small-text-center columns">
+            <h2>Trusted by</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.coinbase.com/">
+            <div class="client client-coinbase"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.airbnb.com/">
+            <div class="client client-airbnb"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://stripe.com/">
+                <div class="client client-stripe"></div>
+            </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.uber.com/">
+            <div class="client client-uber"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://mixpanel.com/">
+            <div class="client client-mixpanel"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://wordpress.com/">
+            <div class="client client-wordpress"></div>
+          </a>
+        </div>
+    </div>
+
+
+    <div class="section-pattern">    
+        <div class="row">
+            <div class="small-10 small-centered small-text-center columns">
+
+                <p>Reach out to us if you want to see how our security audits can
+                    help your business,<br> or if you have any questions.</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="small-12 small-centered columns small-text-center">
+                <a href="/contact" class="button large pull success">Contact</a>
+            </div>
+        </div>
+    </div>
+</section>-->
+
+</div>
+
+
+
+<footer>
+    <div class="row">
+        <div class="small-6 medium-3 large-2 columns">
+            <h4>Sakurity</h4>
+            <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+            </ul>
+        </div>
+
+
+
+        <div class="small-12 medium-6 large-8 small-text-center medium-text-right columns">
+            <div class="logo-monochrome"></div>
+            <p class="copyright">Sakurity Ltd, a Hong Kong company established in 2012.<br><a href="mailto:info@sakurity.com">info@sakurity.com</a></p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,3 @@
+cd blog
+jekyll build -d ../public/blog
+cd ..

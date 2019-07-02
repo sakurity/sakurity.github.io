@@ -1,0 +1,35 @@
+---
+layout: sakurity
+---
+
+    <div class="page-content">
+      <div class="wrapper">
+
+
+<div class="home">
+
+<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="{{ "/feed.xml" | prepend: site.baseurl }}">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+
+  <ul class="post-list">
+    {% for post in site.posts %}
+      <li>
+        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}{% if post.author %} • {{ post.author }}{% endif %}{% if post.meta %} • {{ post.meta }}{% endif %}</span>
+
+        <h2>
+          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
+        </h2>
+
+
+      </li>
+      
+    {% endfor %}
+
+</ul>
+
+
+  </ul>
+
+
+</div>
+
+</div></div>

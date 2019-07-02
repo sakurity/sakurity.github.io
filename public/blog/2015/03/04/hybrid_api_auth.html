@@ -1,0 +1,258 @@
+
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+<base href="https://sakurity.com" />
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Your API Authentication is insecure, and we'll tell you why</title>
+
+    <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
+    <meta name="keywords"
+          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/styles/vendor.css"/>
+    <link rel="stylesheet" href="/styles/main.css"/>
+<meta property="og:image" content="https://www.sakurity.com/images/sakurity-logo@2x.png" />
+
+
+  <link rel="canonical" href="https://sakurity.com/blog/2015/03/04/hybrid_api_auth.html">
+  <link rel="alternate" type="application/rss+xml" title="The Sakurity Blog" href="https://sakurity.com/blog/feed.xml" />
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+<!--[if lt IE 10]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
+    your browser</a> to improve your experience.</p>
+<![endif]-->
+
+<nav class="top-bar row" data-topbar>
+    <section class="top-bar-section">
+
+        <ul class="left">
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+        </ul>
+
+    </section>
+</nav>
+    <div class="page-content">
+      <div class="wrapper">
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Your API Authentication is insecure, and we'll tell you why</h1>
+  </header>
+
+  <article class="post-content">
+<p>3 days ago I reported <strong>Spree Commerce</strong> <a href="https://spreecommerce.com/blog/security-updates-2015-3-3">critical JSONP+CSRF vulnerability on all API endpoints</a>. Instagram API was <a href="https://insertco.in/2014/02/10/how-i-hacked-instagram/">vulnerable to CSRF</a>. Disqus, Stripe and Shopify APIs were <a href="https://homakov.blogspot.com/2013/02/are-you-sure-you-use-jsonp-properly.html">leaking private data via JSONP</a>. All that happened because they were not using <strong>Hybrid API Authentication</strong> properly.</p>
+
+<p>This post is a must read for every API developer. I will keep it short and concise though. Seriously, give your friends the link, because I’m going to explain essential basics of API Authentication and current state-of-the-art.</p>
+
+<p>So, you have Application Program Interface that authenticates by <code class="highlighter-rouge">api_key</code>:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">load_user</span>
+  <span class="vi">@current_api_user</span> <span class="o">=</span> <span class="no">Spree</span><span class="p">.</span><span class="nf">user_class</span><span class="p">.</span><span class="nf">find_by</span><span class="p">(</span><span class="ss">spree_api_key: </span><span class="n">api_key</span><span class="p">.</span><span class="nf">to_s</span><span class="p">)</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>Then someone asks you to implement CORS because they want to use your API with JS:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">config</span><span class="p">.</span><span class="nf">middleware</span><span class="p">.</span><span class="nf">insert_before</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"Rack::Cors"</span> <span class="k">do</span>
+  <span class="n">allow</span> <span class="k">do</span>
+    <span class="n">origins</span> <span class="s1">'*'</span>
+    <span class="n">resource</span> <span class="s1">'*'</span><span class="p">,</span> <span class="ss">:headers</span> <span class="o">=&gt;</span> <span class="ss">:any</span><span class="p">,</span> <span class="ss">:methods</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="ss">:get</span><span class="p">,</span> <span class="ss">:post</span><span class="p">,</span> <span class="ss">:options</span><span class="p">]</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>And you obviously have <code class="highlighter-rouge">skip_before_action :verify_authenticity_token</code> in your ApiController. Why would you need CSRF verification for API requests coming from, say, your Android app?</p>
+
+<p>Yet another customer asked for JSONP support because CORS is not supported in old browsers. Sure thing!</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">after_filter</span>  <span class="ss">:set_jsonp_format</span>
+<span class="k">def</span> <span class="nf">set_jsonp_format</span>
+ <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="ss">:callback</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="n">request</span><span class="p">.</span><span class="nf">get?</span>
+   <span class="nb">self</span><span class="p">.</span><span class="nf">response_body</span> <span class="o">=</span> <span class="s2">"</span><span class="si">#{</span><span class="n">params</span><span class="p">[</span><span class="ss">:callback</span><span class="p">]</span><span class="si">}</span><span class="s2">(</span><span class="si">#{</span><span class="n">response</span><span class="p">.</span><span class="nf">body</span><span class="si">}</span><span class="s2">)"</span>
+   <span class="n">headers</span><span class="p">[</span><span class="s2">"Content-Type"</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'application/javascript'</span>
+ <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>Everything is fine so far. But eventually your developers decide to follow the trend Backend-As-API and use your own api.example.com on the client side. There are two options:</p>
+
+<h2 id="append-api_token-manually">Append api_token manually</h2>
+<p>For example Soundcloud sends <code class="highlighter-rouge">Authorization:OAuth 1-16343-15233329-796b6b695d2c7c1</code> header with every API request, Foursquare adds <code class="highlighter-rouge">oauth_token=YXIAC4Y254HGZBNPQW6S0UFBGGSU57RBP</code>.</p>
+
+<p><strong>Disadvantadge #1:</strong> XSS. OAuth tokens are accessible with Javascript and the attacker can leak victim’s credentials. There’s <code class="highlighter-rouge">HttpOnly</code> flag for cookies to prevent that. Nothing like that can be created for OAuth tokens.</p>
+
+<p><strong>Disadvantadge #2:</strong> For every request there will be an <code class="highlighter-rouge">OPTIONS</code> request, doubling the latency. By the way I wrote about <a href="https://homakov.blogspot.com/2014/01/how-to-use-cors-without-preflights.html">CORS without preflights</a> trick.</p>
+
+<p>Despite some high profile use this approach I do not recommend it.</p>
+
+<h2 id="authenticate-the-user-by-cookies">Authenticate the user by cookies</h2>
+
+<p>The fix is short and you are all set: <code class="highlighter-rouge">@current_api_user = (try_spree_current_user || Spree.user_class.find_by(spree_api_key: api_key.to_s))</code>. <code class="highlighter-rouge">try_spree_current_user</code> parses _spree_session cookie, extracts user_id and returns <code class="highlighter-rouge">User.find(session[:user_id])</code>. So what can be wrong with this line of code?</p>
+
+<p>Cookies is also a header like “Authorization”, but very tricky to understand even for mature developers. I call it <strong>“sticky credentials”</strong>, because they are attached <strong>automatically</strong>, even to requests from 3rd party domains (evil.com).</p>
+
+<p>The fact that absolute majority of web developers don’t understand this simple concept made Cross Site Request Forgery the most wide spread security issue, and I’m not exaggerating. That’s why every cookie-based authentication must be <strong>“double-authenticated”</strong> with extra csrf_token nonce. This nonce helps you to make sure the request comes from your domain.</p>
+
+<ol>
+  <li>
+    <p>Since you skipped CSRF protection for API requests, all your API endpoints are now vulnerable to request forgery. <a href="https://securecanvas.com/csrf.html#{&quot;url&quot;:&quot;https://majestic-stall-2602.spree.mx/api/users/1&quot;,&quot;autosubmit&quot;:false,&quot;target&quot;:&quot;_top&quot;,&quot;data&quot;:&quot;utf8=%E2%9C%93&amp;_method=put&amp;user%5Bemail%5D=spree%40example.com1&amp;user%5Bspree_role_ids%5D%5B%5D=&amp;user%5Bpassword%5D=123123123&amp;user%5Bpassword_confirmation%5D=123123123&amp;button=&amp;sbmbtn=&amp;&quot;,&quot;method&quot;:&quot;POST&quot;}">Example changing admin’s password on Spree.</a></p>
+  </li>
+  <li>
+    <p>JSONP leaks any GET response via cross-site with <code class="highlighter-rouge">&lt;script src="https://api.example.com/orders.json?callback=leakMe"&gt;&lt;/script&gt;</code></p>
+  </li>
+  <li>
+    <p>CORS is even worse, because every kind of request is leaking.</p>
+  </li>
+</ol>
+
+<h2 id="doing-it-right-hybrid-api-authentication">Doing it right: Hybrid API Authentication</h2>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="vi">@current_api_user</span> <span class="o">=</span> <span class="k">unless</span> <span class="n">api_key</span><span class="p">.</span><span class="nf">to_s</span><span class="p">.</span><span class="nf">empty?</span>
+  <span class="no">Spree</span><span class="p">.</span><span class="nf">user_class</span><span class="p">.</span><span class="nf">find_by</span><span class="p">(</span><span class="ss">spree_api_key: </span><span class="n">api_key</span><span class="p">.</span><span class="nf">to_s</span><span class="p">)</span>
+  <span class="c1"># Good to go!</span>
+<span class="k">else</span>
+  <span class="c1"># Everyone stand back, we are using cookies!</span>
+  <span class="c1"># 1) verify CSRF token for all non-GET requests</span>
+  <span class="c1"># 2) drop JSONP support</span>
+  <span class="c1"># 3) drop CORS support</span>
+  <span class="n">try_spree_current_user</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>This Hybrid approach allows you to use your api.example.com with both frontend (JS/HTML app) and 3rd party application, keeps your credentials secure from XSS (HttpOnly) and doesn’t generate pointless OPTIONS requests. This is state-of-the-art and if your approach is different, it’s wrong.</p>
+
+
+<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/03/04/hybrid_api_auth.html" data-text="Your API Authentication is insecure, and we'll tell you why" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
+<script>
+!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script></p>
+
+<h3>Mar 4, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
+
+
+<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+  </article>
+
+
+
+
+
+
+<div id="spot-im-frame-inpage" data-post-id=""></div>
+
+
+</div></div>
+
+
+
+<div class="content">
+
+<!--<section class="inverse contact-us">
+
+    <div class="row">
+        <div class="small-12 small-text-center columns">
+            <h2>Trusted by</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.coinbase.com/">
+            <div class="client client-coinbase"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.airbnb.com/">
+            <div class="client client-airbnb"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://stripe.com/">
+                <div class="client client-stripe"></div>
+            </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.uber.com/">
+            <div class="client client-uber"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://mixpanel.com/">
+            <div class="client client-mixpanel"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://wordpress.com/">
+            <div class="client client-wordpress"></div>
+          </a>
+        </div>
+    </div>
+
+
+    <div class="section-pattern">    
+        <div class="row">
+            <div class="small-10 small-centered small-text-center columns">
+
+                <p>Reach out to us if you want to see how our security audits can
+                    help your business,<br> or if you have any questions.</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="small-12 small-centered columns small-text-center">
+                <a href="/contact" class="button large pull success">Contact</a>
+            </div>
+        </div>
+    </div>
+</section>-->
+
+</div>
+
+
+
+<footer>
+    <div class="row">
+        <div class="small-6 medium-3 large-2 columns">
+            <h4>Sakurity</h4>
+            <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+            </ul>
+        </div>
+
+
+
+        <div class="small-12 medium-6 large-8 small-text-center medium-text-right columns">
+            <div class="logo-monochrome"></div>
+            <p class="copyright">Sakurity Ltd, a Hong Kong company established in 2012.<br><a href="mailto:info@sakurity.com">info@sakurity.com</a></p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

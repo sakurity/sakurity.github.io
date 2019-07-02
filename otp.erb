@@ -1,0 +1,61 @@
+<h3>OTP Bruteforce Calculator</h3>
+<p>
+One Time Password systems became really popular recently, but to have a robust 2FA you need to limit attempts: OTPs are 6-digit codes which are easy to remember and type and just as easy to bruteforce. It will take <b>3 days maximum</b>. Do not use CAPTCHA to stop the attacker - it will make the attack more expensive ($1 per 1,000 captchas) but it will remain feasible. Simply lock the account after 10 failed attempts and ask the user to change his password.
+</p>
+
+<div>
+<iframe scrolling="no" frameborder="0"  seamless style="border:0;width:370px;height:400px;float:right" id="target"></iframe>
+Time step (for how long the OTP is valid, in seconds)<br>
+<input onchange=go() id="w" value="30"><br>
+Clock skew (how many OTPs are valid at once).<br>
+<input onchange=go() id="skew" value="1"><br>
+Number of combinations, for 6 digits it's just a million.<br>
+<input onchange=go() id="total" placeholder="" value="1000000"><br>
+Requests per second the attacker can make.<br>
+<input onchange=go() id="req" placeholder="Requests per second" value="10"><br>
+<div id="result"></div>
+</div>
+
+<script>
+go = function(){
+
+  var time_step = Number($('#w').val());
+  var clock_skew = Number($('#skew').val());
+  var total = Number($('#total').val());
+  var req_per_second = Number($('#req').val());
+
+  var chance_to_lose = (total - req_per_second * time_step * clock_skew) / total;
+  if(chance_to_lose < 0){
+    alert('Match will be found in first timestep, negative probability')
+    return false;
+  }
+
+  var current_chance = 1;
+  var breakpoints = [0.50, 0.75, 0.90, 0.99];
+
+
+  var r = "Time the bruteforce will take (X-axes, number of time steps) and probability (Y-axes)<br>";
+  for(i = 1; i < 99999999; i++){
+    current_chance *= chance_to_lose;
+    
+    while(true){
+      if(breakpoints[0] && 1 - current_chance > breakpoints[0]){
+        hours = Math.round((i*time_step)/3600)
+        r += hours+" hours ("+i*time_step+" seconds) - " + breakpoints[0]*100 + "%<br>";
+        breakpoints.shift();
+      }else{
+        break;
+      }
+
+    }
+
+    if(breakpoints.length == 0){break;}
+  }
+  document.getElementById('target').src = "https://www.wolframalpha.com/widget/input/?input=plot%20y%20%3D%20%5B%2F%2Fmath%3A1-"+chance_to_lose+"%5Ex%2F%2F%5D%20for%20x%20%3D%20%5B%2F%2Fquantity%3A1%2F%2F%5D%20to%20%5B%2F%2Fquantity%3A"+i+"%2F%2F%5D%20and%20y%20%3D%20%5B%2F%2Fquantity%3A0%2F%2F%5D%20to%20%5B%2F%2Fquantity%3A1%2F%2F%5D&id=bafd4215ef527cf0e0b2f843ce2ee763";
+
+  $('#result').html(r);
+  return false;
+
+}
+window.onload=go
+</script>

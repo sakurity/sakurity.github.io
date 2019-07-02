@@ -1,0 +1,298 @@
+
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+<base href="https://sakurity.com" />
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Format Injection Vulnerability in Duo Security Web SDK</title>
+
+    <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
+    <meta name="keywords"
+          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/styles/vendor.css"/>
+    <link rel="stylesheet" href="/styles/main.css"/>
+<meta property="og:image" content="https://www.sakurity.com/images/sakurity-logo@2x.png" />
+
+
+  <link rel="canonical" href="https://sakurity.com/blog/2015/03/03/duo_format_injection.html">
+  <link rel="alternate" type="application/rss+xml" title="The Sakurity Blog" href="https://sakurity.com/blog/feed.xml" />
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+<!--[if lt IE 10]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
+    your browser</a> to improve your experience.</p>
+<![endif]-->
+
+<nav class="top-bar row" data-topbar>
+    <section class="top-bar-section">
+
+        <ul class="left">
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+        </ul>
+
+    </section>
+</nav>
+    <div class="page-content">
+      <div class="wrapper">
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Format Injection Vulnerability in Duo Security Web SDK</h1>
+  </header>
+
+  <article class="post-content">
+<p>Format Injection is not a new bug, but it was never described as a subclass of <a href="https://www.owasp.org/index.php/Top_10_2013-A1-Injection">A1 Injection</a>. You probably already hate me for giving it a name (at least I didn’t create a logo!) but calling it an “injection” is too general.</p>
+
+<p>The idea is very similar to SQL injections but instead of breaking quotes <code class="highlighter-rouge">'</code> with user input and changing the query, we are breaking custom delimiters <code class="highlighter-rouge">/:|,;&amp;</code> and changing the signed data.</p>
+
+<p><img src="https://www.duosecurity.com/static/images/duo-logo.svg" alt="Duo" /></p>
+
+<p>This is how <a href="https://duosecurity.com/">Duo Security’s</a> Web integration works:</p>
+
+<ol>
+  <li>
+    <p>The user logs in the client app with valid username/password and receives TX token requesting 2nd factor authentication and APP token proving that the user actually passed first authentication step.</p>
+  </li>
+  <li>
+    <p>Now the user exchanges TX token for AUTH token with Duo API (using Duo Push, SMS or a phone call). AUTH token proves the user successfully passed second authentication step.</p>
+  </li>
+  <li>
+    <p>With previously obtained APP token and AUTH token the user is sent to /final_login endpoint which makes sure both tokens are valid and belong to the same username. The <code class="highlighter-rouge">verify_response</code> method returns <code class="highlighter-rouge">username</code> and you now can log the visitor in the account with returned <code class="highlighter-rouge">username</code>.</p>
+  </li>
+</ol>
+
+<p><img src="https://sakurity.com/img/duo.png" alt="duo workflow" /></p>
+
+<p>The system is built in a way that even <strong>if SKEY is leaked the attackers won’t be able to log in arbitrary accounts</strong> because they don’t have your secret AKEY and they can’t forge valid APP tokens. We found a neat format injection in a way Duo signs the APP token. Advisory ID: DUO-PSA-2015-001</p>
+
+<blockquote>
+  <p>Duo Security has identified an issue in certain versions of the Duo Web SDK that could allow attackers to bypass primary and secondary authentication if they have separately gained access to the Duo integration’s secret key, and can create valid usernames containing pipe characters (<code class="highlighter-rouge">|</code>).</p>
+</blockquote>
+
+<blockquote>
+  <p>Note: This issue does not affect any Duo-authored integrations; it only affects custom integrations developed using affected versions of the Web SDK.</p>
+</blockquote>
+
+<p><strong>The severity is low</strong> because to sign into arbitrary account you still need a valid AUTH token which means you need to compromise the SKEY. However if your app is affected don’t hesitate to rotate your AKEY.</p>
+
+<p><strong>Conditions:</strong> the victim uses Ruby, PHP, Perl, Java or ColdFusion SDKs. Also pipe symbol is allowed in usernames and username field is used as Duo ID (it can be user id or email, where pipe symbol is impossible).</p>
+
+<p>See this piece of code from their Ruby library:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="nb">require</span> <span class="s1">'base64'</span>
+<span class="nb">require</span> <span class="s1">'openssl'</span>
+<span class="k">def</span> <span class="nf">hmac_sha1</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+  <span class="no">OpenSSL</span><span class="o">::</span><span class="no">HMAC</span><span class="p">.</span><span class="nf">hexdigest</span><span class="p">(</span><span class="no">OpenSSL</span><span class="o">::</span><span class="no">Digest</span><span class="o">::</span><span class="no">Digest</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="s1">'sha1'</span><span class="p">),</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">.</span><span class="nf">to_s</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">sign_vals</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">expire</span><span class="p">)</span>
+  <span class="n">exp</span> <span class="o">=</span> <span class="no">Time</span><span class="p">.</span><span class="nf">now</span><span class="p">.</span><span class="nf">to_i</span> <span class="o">+</span> <span class="n">expire</span>
+
+  <span class="n">val_list</span> <span class="o">=</span> <span class="n">vals</span> <span class="o">+</span> <span class="p">[</span><span class="n">exp</span><span class="p">]</span>
+  <span class="n">val</span> <span class="o">=</span> <span class="n">val_list</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="s1">'|'</span><span class="p">)</span>
+
+  <span class="n">b64</span> <span class="o">=</span> <span class="no">Base64</span><span class="p">.</span><span class="nf">encode64</span><span class="p">(</span><span class="n">val</span><span class="p">).</span><span class="nf">gsub</span><span class="p">(</span><span class="sr">/\n/</span><span class="p">,</span><span class="s1">''</span><span class="p">)</span>
+  <span class="n">cookie</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s1">'|'</span> <span class="o">+</span> <span class="n">b64</span>
+
+  <span class="n">sig</span> <span class="o">=</span> <span class="n">hmac_sha1</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
+  <span class="k">return</span> <span class="p">[</span><span class="n">cookie</span><span class="p">,</span> <span class="n">sig</span><span class="p">].</span><span class="nf">join</span><span class="p">(</span><span class="s1">'|'</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">parse_vals</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
+  <span class="n">ts</span> <span class="o">=</span> <span class="no">Time</span><span class="p">.</span><span class="nf">now</span><span class="p">.</span><span class="nf">to_i</span>
+  <span class="n">u_prefix</span><span class="p">,</span> <span class="n">u_b64</span><span class="p">,</span> <span class="n">u_sig</span> <span class="o">=</span> <span class="n">val</span><span class="p">.</span><span class="nf">to_s</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="s1">'|'</span><span class="p">)</span>
+  <span class="n">sig</span> <span class="o">=</span> <span class="n">hmac_sha1</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">[</span><span class="n">u_prefix</span><span class="p">,</span> <span class="n">u_b64</span><span class="p">].</span><span class="nf">join</span><span class="p">(</span><span class="s1">'|'</span><span class="p">))</span>
+  <span class="k">return</span> <span class="kp">nil</span> <span class="k">if</span> <span class="n">hmac_sha1</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sig</span><span class="p">)</span> <span class="o">!=</span> <span class="n">hmac_sha1</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">u_sig</span><span class="p">)</span>
+  <span class="k">return</span> <span class="kp">nil</span> <span class="k">if</span> <span class="n">u_prefix</span> <span class="o">!=</span> <span class="n">prefix</span>
+  <span class="n">user</span><span class="p">,</span> <span class="n">ikey</span><span class="p">,</span> <span class="n">exp</span> <span class="o">=</span> <span class="no">Base64</span><span class="p">.</span><span class="nf">decode64</span><span class="p">(</span><span class="n">u_b64</span><span class="p">).</span><span class="nf">to_s</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="s1">'|'</span><span class="p">)</span>
+  <span class="k">return</span> <span class="kp">nil</span> <span class="k">if</span> <span class="n">ts</span> <span class="o">&gt;=</span> <span class="n">exp</span><span class="p">.</span><span class="nf">to_i</span>
+  <span class="k">return</span> <span class="n">user</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>If we manage to create a user with username=<code class="highlighter-rouge">victim||9999999999</code> the APP token we get for it will be parsed the same way as token for the user with username=victim.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">sig1</span> <span class="o">=</span> <span class="n">sign_vals</span><span class="p">(</span><span class="s1">'AKEY'</span><span class="p">,[</span><span class="s1">'victim'</span><span class="p">,</span><span class="s1">'IKEY'</span><span class="p">],</span><span class="s1">'APP'</span><span class="p">,</span><span class="mi">3600</span><span class="p">)</span>
+<span class="nb">puts</span> <span class="n">parse_vals</span><span class="p">(</span><span class="s1">'AKEY'</span><span class="p">,</span> <span class="n">sig1</span><span class="p">,</span> <span class="s1">'APP'</span><span class="p">)</span> <span class="c1">#returns 'victim'</span>
+
+
+<span class="n">sig2</span> <span class="o">=</span> <span class="n">sign_vals</span><span class="p">(</span><span class="s1">'AKEY'</span><span class="p">,[</span><span class="s1">'victim||9999999999'</span><span class="p">,</span><span class="s1">'IKEY'</span><span class="p">],</span><span class="s1">'APP'</span><span class="p">,</span><span class="mi">3600</span><span class="p">)</span>
+<span class="nb">puts</span> <span class="n">parse_vals</span><span class="p">(</span><span class="s1">'AKEY'</span><span class="p">,</span> <span class="n">sig2</span><span class="p">,</span> <span class="s1">'APP'</span><span class="p">)</span> <span class="c1">#returns 'victim' too</span></code></pre></figure>
+
+<p>If it’s still not clear look at the concatenated strings:</p>
+
+<p>The app signs <code class="highlighter-rouge">victim|IKEY|12345678</code> for the victim user. <code class="highlighter-rouge">user, ikey, exp = string.split('|')</code> returns user=<code class="highlighter-rouge">victim</code> and exp=<code class="highlighter-rouge">12345678</code></p>
+
+<p>The app signs <code class="highlighter-rouge">victim||9999999999|IKEY|12345678</code> for the attacker. <code class="highlighter-rouge">user, ikey, exp = string.split('|')</code> returns user=<code class="highlighter-rouge">victim</code> and exp=<code class="highlighter-rouge">9999999999</code> (the token is valid forever).</p>
+
+<h2 id="more-examples">More examples</h2>
+
+<ol>
+  <li>
+    <p>Anything like <code class="highlighter-rouge">val+DELIMITER+user_input+DELIMITER+...</code> or <code class="highlighter-rouge">[user_input,val2,val3].join(':')</code> is very likely to be vulnerable to format injection.</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">openURL('https://oauth/?client_id=1&amp;client_secret=2&amp;code='+params[:unescaped_code])</code> in hand-made API and OAuth implementations. Injecting code=<code class="highlighter-rouge">&amp;client_id=new_client_id&amp;client_secret=new_client_secret</code> leads to replacing client credentials with new values and authentication bypass.</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">'{"val":"'+user_input+'"}'</code> or <code class="highlighter-rouge">'<span class="nt">&lt;xml&gt;</span>'+user_input+'<span class="nt">&lt;/xml&gt;</span>'</code>, because XSS is a format injection too.</p>
+  </li>
+  <li>
+    <p>See our <a href="https://sakurity.com/blog/2014/01/02/puzzle1.html">Puzzle #1</a></p>
+  </li>
+  <li>
+    <p>Many payment gateways with custom data formats. This is how Liqpay and <a href="https://www.walletone.com/en/merchant/documentation/">WalletOne</a> signs orders (no delimiters, just sorted alphabetically and concatenated. I am not even going to comment that)</p>
+  </li>
+</ol>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="p">{</span>
+<span class="s2">"WMI_MERCHANT_ID"</span><span class="o">=&gt;</span><span class="s2">"119175088534"</span><span class="p">,</span>
+<span class="s2">"WMI_PAYMENT_AMOUNT"</span><span class="o">=&gt;</span><span class="s2">"100.00"</span><span class="p">,</span>
+<span class="s2">"WMI_CURRENCY_ID"</span>    <span class="o">=&gt;</span> <span class="s2">"643"</span><span class="p">,</span>
+<span class="s2">"WMI_PAYMENT_NO"</span>     <span class="o">=&gt;</span> <span class="s2">"12345-001"</span><span class="p">,</span>
+<span class="s2">"WMI_DESCRIPTION"</span>    <span class="o">=&gt;</span> <span class="s2">"BASE64:f"</span><span class="p">,</span>
+<span class="s2">"WMI_EXPIRED_DATE"</span>   <span class="o">=&gt;</span> <span class="s2">"2019-12-31T23:59:59"</span><span class="p">,</span>
+<span class="s2">"WMI_SUCCESS_URL"</span>    <span class="o">=&gt;</span> <span class="s2">"https://myshop.com/w1/success.php"</span><span class="p">,</span>
+<span class="s2">"WMI_FAIL_URL"</span>       <span class="o">=&gt;</span> <span class="s2">"https://myshop.com/w1/fail.php"</span>
+<span class="p">}.</span><span class="nf">sort</span><span class="p">.</span><span class="nf">map</span><span class="p">{</span><span class="o">|</span><span class="n">key</span><span class="p">,</span><span class="n">value</span><span class="o">|</span> <span class="n">value</span><span class="p">}.</span><span class="nf">join</span>
+
+<span class="c1"># =&gt; 643BASE64:f2019-12-31T23:59:59https://myshop.com/w1/fail.php119175088534100.0012345-001https://myshop.com/w1/success.php</span></code></pre></figure>
+
+
+
+<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/03/03/duo_format_injection.html" data-text="Format Injection Vulnerability in Duo Security Web SDK" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
+<script>
+!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script></p>
+
+<h3>Mar 3, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
+
+
+<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+  </article>
+
+
+
+
+
+
+<div id="spot-im-frame-inpage" data-post-id=""></div>
+
+
+</div></div>
+
+
+
+<div class="content">
+
+<!--<section class="inverse contact-us">
+
+    <div class="row">
+        <div class="small-12 small-text-center columns">
+            <h2>Trusted by</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.coinbase.com/">
+            <div class="client client-coinbase"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.airbnb.com/">
+            <div class="client client-airbnb"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://stripe.com/">
+                <div class="client client-stripe"></div>
+            </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.uber.com/">
+            <div class="client client-uber"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://mixpanel.com/">
+            <div class="client client-mixpanel"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://wordpress.com/">
+            <div class="client client-wordpress"></div>
+          </a>
+        </div>
+    </div>
+
+
+    <div class="section-pattern">    
+        <div class="row">
+            <div class="small-10 small-centered small-text-center columns">
+
+                <p>Reach out to us if you want to see how our security audits can
+                    help your business,<br> or if you have any questions.</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="small-12 small-centered columns small-text-center">
+                <a href="/contact" class="button large pull success">Contact</a>
+            </div>
+        </div>
+    </div>
+</section>-->
+
+</div>
+
+
+
+<footer>
+    <div class="row">
+        <div class="small-6 medium-3 large-2 columns">
+            <h4>Sakurity</h4>
+            <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+            </ul>
+        </div>
+
+
+
+        <div class="small-12 medium-6 large-8 small-text-center medium-text-right columns">
+            <div class="logo-monochrome"></div>
+            <p class="copyright">Sakurity Ltd, a Hong Kong company established in 2012.<br><a href="mailto:info@sakurity.com">info@sakurity.com</a></p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

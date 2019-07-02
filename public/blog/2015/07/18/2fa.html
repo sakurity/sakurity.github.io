@@ -1,0 +1,257 @@
+
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+<base href="https://sakurity.com" />
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Why You Don't Need 2 Factor Authentication</title>
+
+    <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
+    <meta name="keywords"
+          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/styles/vendor.css"/>
+    <link rel="stylesheet" href="/styles/main.css"/>
+<meta property="og:image" content="https://www.sakurity.com/images/sakurity-logo@2x.png" />
+
+
+  <link rel="canonical" href="https://sakurity.com/blog/2015/07/18/2fa.html">
+  <link rel="alternate" type="application/rss+xml" title="The Sakurity Blog" href="https://sakurity.com/blog/feed.xml" />
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+<!--[if lt IE 10]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
+    your browser</a> to improve your experience.</p>
+<![endif]-->
+
+<nav class="top-bar row" data-topbar>
+    <section class="top-bar-section">
+
+        <ul class="left">
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+        </ul>
+
+    </section>
+</nav>
+    <div class="page-content">
+      <div class="wrapper">
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Why You Don't Need 2 Factor Authentication</h1>
+  </header>
+
+  <article class="post-content">
+<p>TL;DR because 2FA == password manager.</p>
+
+<p>2FA, as many other things in infosec, is full of myths and stereotypes. I stumbled upon this link where <a href="https://bitbucket.org/site/master/issues/5811/support-two-factor-authentication-bb-7016">lots of people demand bitbucket to add 2FA.</a> For what? Let’s talk about some myths of 2FA.</p>
+
+<h2 id="myth-1-what-you-know-what-you-have-blah-blah">Myth 1. What you “know”, what you “have”, blah blah</h2>
+
+<p><a href="https://en.wikipedia.org/wiki/Multi-factor_authentication">Wikipedia page about multi factor auth</a>. There are no “knowledge” and “inherence” factors, there’s only possession factor. You possess a password by having it in your neurons (or whatever used for memory), you also possess your fingerprints (fingers happen to be attached to your body since you were born).</p>
+
+<p>Therefore there are no “3 categories” that can be used for authentication, there is unlimited number of factors with different “features”. Let’s mention some of them:</p>
+
+<ol>
+  <li>
+    <p>Password - stored in your memory, easy to forget, often reused, often not complex enough. A human being can only remember few dozens of complex enough passwords.</p>
+  </li>
+  <li>
+    <p>Hardware token - stored in your backpack, not hard to lose or break, almost impossible to backup.</p>
+  </li>
+  <li>
+    <p>Fingerprint - <a href="https://blog.dustinkirkland.com/2013/10/fingerprints-are-user-names-not.html">is username, not password</a>. Should never be used in remote systems like web apps. Refrain from using it in physical access systems too - in near future faking perfect fingerprints is more likely than mind stealing your passwords.</p>
+  </li>
+  <li>
+    <p>SMS/Email code - here you have to rely on few other guys in the middle who possess your codes as much as you do - telecoms and email providers. Codes sent by SMS (<a href="https://sakurity.com/blog/2015/03/15/authy_bypass.html">like Authy</a>) are not 2FA, it’s 2 step verification, pretty much pointless and expensive.</p>
+  </li>
+  <li>
+    <p>Whitelisted IP address - trustworthy, but beware of CSRF requests and DNS rebinding attacks.</p>
+  </li>
+</ol>
+
+<p>to be continued</p>
+
+<h2 id="myth-2-2fa-makes-my-account-more-secure-with-no-strings-attached">Myth 2. 2FA makes my account more secure with no strings attached</h2>
+
+<p>Technically it does because it adds extra authentication step but you don’t see the big picture yet:</p>
+
+<ol>
+  <li>
+    <p>It requires you to type a code every time and wastes your time</p>
+  </li>
+  <li>
+    <p>If you lose HOTP seed it is up to admins to give you second chance to access your account</p>
+  </li>
+  <li>
+    <p>Doesn’t stop malware and viruses - <a href="https://www.schneier.com/blog/archives/2005/03/the_failure_of.html">Schneier wrote extremely good insight back in 2005</a></p>
+  </li>
+  <li>
+    <p>Major design mistake - TOTP authenticators generate just 6 digits - <a href="https://sakurity.com/otp">OTP bruteforce</a> works like a charm and takes less than 3 days. On top of that 30 seconds limit is quite silly - it doesn’t make bruteforce any harder - just do the math and you will see.</p>
+  </li>
+</ol>
+
+<p><strong>There’s no way to stop bruteforce not locking the account</strong>. The real user will be locked out as well, and it’s again up to admins if they decide to spend their time on your ID verification. Good HOTP should have bruteforce “protection” out-of-box, 6 letters [a-zA-Z0-9] give 56800235584 combinations and require <strong>hunders of years</strong> of bruteforce.</p>
+
+<h2 id="recap-read-this-before-commenting-ok">Recap (read this before commenting, ok?)</h2>
+
+<p>A 2FA app is essentially a password manager. A 2FA seed/code is essentially a password. <strong>“Time-based” thing does not add any security</strong>, and 6-digits thing makes security even worse. <strong>2FA is obscure, inconvenient, hard to backup, bruteforce-able password manager.</strong></p>
+
+<p>You don’t need 2FA, all you need is a unique complex password and a password manager.</p>
+
+<p><strong>There’s no plausible attack scenario where simple password + 2FA is better than good complex password alone</strong>. Why?</p>
+
+<ol>
+  <li>
+    <p>If the attackers managed to infect your computer with malware, they can wait a couple of days until you type a valid OTP code. “Be hacked right away” vs “be hacked next week” is not major  advantage. Out-of-band 2FA is another story though and I didn’t see it implemented properly anywhere.</p>
+  </li>
+  <li>
+    <p>If the attackers hack your email box, now they can set a new password, indeed. This could be mitigated with some “Never remind me password” option - stop asking Bitbucket and others to implement 2FA, better ask them to add such option.</p>
+  </li>
+</ol>
+
+<p>Thanks Chrome, this is the future:</p>
+
+<p><img src="/img/2fachrome.png" alt="" /></p>
+
+<p>Tweet <a href="https://twitter.com/homakov">@homakov</a> to tell how wrong I am.</p>
+
+<p>P.S. 2FA comes in handy if you know your support guys (likely) use bad passwords and “You must set 2FA” is just another way to say “You must use a password manager”.</p>
+
+
+<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/07/18/2fa.html" data-text="Why You Don't Need 2 Factor Authentication" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
+<script>
+!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script></p>
+
+<h3>Jul 18, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
+
+
+<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+  </article>
+
+
+
+
+
+
+<div id="spot-im-frame-inpage" data-post-id=""></div>
+
+
+</div></div>
+
+
+
+<div class="content">
+
+<!--<section class="inverse contact-us">
+
+    <div class="row">
+        <div class="small-12 small-text-center columns">
+            <h2>Trusted by</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.coinbase.com/">
+            <div class="client client-coinbase"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.airbnb.com/">
+            <div class="client client-airbnb"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://stripe.com/">
+                <div class="client client-stripe"></div>
+            </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://www.uber.com/">
+            <div class="client client-uber"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://mixpanel.com/">
+            <div class="client client-mixpanel"></div>
+          </a>
+        </div>
+
+        <div class="small-6 medium-4 large-2 small-text-center columns clients">
+          <a href="https://wordpress.com/">
+            <div class="client client-wordpress"></div>
+          </a>
+        </div>
+    </div>
+
+
+    <div class="section-pattern">    
+        <div class="row">
+            <div class="small-10 small-centered small-text-center columns">
+
+                <p>Reach out to us if you want to see how our security audits can
+                    help your business,<br> or if you have any questions.</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="small-12 small-centered columns small-text-center">
+                <a href="/contact" class="button large pull success">Contact</a>
+            </div>
+        </div>
+    </div>
+</section>-->
+
+</div>
+
+
+
+<footer>
+    <div class="row">
+        <div class="small-6 medium-3 large-2 columns">
+            <h4>Sakurity</h4>
+            <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+            </ul>
+        </div>
+
+
+
+        <div class="small-12 medium-6 large-8 small-text-center medium-text-right columns">
+            <div class="logo-monochrome"></div>
+            <p class="copyright">Sakurity Ltd, a Hong Kong company established in 2012.<br><a href="mailto:info@sakurity.com">info@sakurity.com</a></p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>
