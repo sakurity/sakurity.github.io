@@ -13,7 +13,7 @@
 
     <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
     <meta name="keywords"
-          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+          content="Fintech Security, OAuth, Bitcoin Security, Layer2, Lightning network">
 
 
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
@@ -27,18 +27,11 @@
 
 
 
-
-
-
 </head>
 
 <body>
 
 
-<!--[if lt IE 10]>
-<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
-    your browser</a> to improve your experience.</p>
-<![endif]-->
 
 <nav class="top-bar row" data-topbar>
     <section class="top-bar-section">
@@ -48,7 +41,7 @@
             <li><a href="/blog">Blog</a></li>
             <li><a href="/research">Research</a></li>
             <li><a href="/contact">Contact Us</a></li>
-            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+
         </ul>
 
     </section>
@@ -75,11 +68,11 @@
 
 <ol>
   <li>
-    <p>The client requests new token: <code class="highlighter-rouge">https://api.authy.com/protected/json/sms/AUTHY_ID?api_key=KEY</code> where AUTHY_ID is publicly available identifier associated with current user account. Expected response: <code class="highlighter-rouge"><span class="p">{</span><span class="nt">"success"</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span><span class="nt">"message"</span><span class="p">:</span><span class="s2">"SMS token was sent"</span><span class="p">,</span><span class="nt">"cellphone"</span><span class="p">:</span><span class="s2">"+1-XXX-XXX-XX85"</span><span class="p">}</span></code> with 200 status.</p>
+    <p>The client requests new token: <code class="highlighter-rouge">https://api.authy.com/protected/json/sms/AUTHY_ID?api_key=KEY</code> where AUTHY_ID is publicly available identifier associated with current user account. Expected response: <code class="highlighter-rouge">{"success":true,"message":"SMS token was sent","cellphone":"+1-XXX-XXX-XX85"}</code> with 200 status.</p>
   </li>
   <li>
     <p>The user sends the token back and the client verifies if the token is valid with <code class="highlighter-rouge">https://api.authy.com/protected/json/verify/SUPPLIED_TOKEN/AUTHY_ID?api_key=KEY</code> and authenticates with second factor if API responds with 200 status (body is ignored):
- <code class="highlighter-rouge"><span class="p">{</span><span class="nt">"success"</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span><span class="nt">"message"</span><span class="p">:</span><span class="s2">"Token is valid."</span><span class="p">,</span><span class="nt">"token"</span><span class="p">:</span><span class="s2">"is valid"</span><span class="p">}</span></code></p>
+ <code class="highlighter-rouge">{"success":true,"message":"Token is valid.","token":"is valid"}</code></p>
   </li>
 </ol>
 
@@ -118,7 +111,7 @@
     <p>Path_traversal middleware decodes path to <code class="highlighter-rouge">https://api.authy.com/protected/json/verify/../sms/authy_id</code>, splits by slashes and removes the directory in front of <code class="highlighter-rouge">/..</code>.</p>
   </li>
   <li>
-    <p>Actual Authy API sees modified path <code class="highlighter-rouge">https://api.authy.com/protected/json/sms/authy_id</code>, simply sends another SMS to authy_id (the victim) and responds with 200 status and <code class="highlighter-rouge"><span class="p">{</span><span class="nt">"success"</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span><span class="nt">"message"</span><span class="p">:</span><span class="s2">"SMS token was sent"</span><span class="p">,</span><span class="nt">"cellphone"</span><span class="p">:</span><span class="s2">"+1-XXX-XXX-XX85"</span><span class="p">}</span></code></p>
+    <p>Actual Authy API sees modified path <code class="highlighter-rouge">https://api.authy.com/protected/json/sms/authy_id</code>, simply sends another SMS to authy_id (the victim) and responds with 200 status and <code class="highlighter-rouge">{"success":true,"message":"SMS token was sent","cellphone":"+1-XXX-XXX-XX85"}</code></p>
   </li>
   <li>
     <p>All Authy SDK libraries consider 200 status as a successful response and let the attacker in. Even a custom integration most likely will look for <code class="highlighter-rouge">"success":true</code> in the JSON body, and our <code class="highlighter-rouge">/sms</code> response body has it. So the only secure way to verify the response is to search for <code class="highlighter-rouge">"token":"is valid"</code> substring (which is what Authy libraries do now).</p>
@@ -134,15 +127,11 @@
 <p>This is another example of format injection and why you need to treat URLs as a format like JSON or XML. <a href="https://sakurity.com/blog/2015/03/03/duo_format_injection.html">Read our first post on format injection in Duo Security Web SDK.</a></p>
 
 
-<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/03/15/authy_bypass.html" data-text="How "../sms" could bypass Authy 2 Factor Authentication" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
-<script>
-!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
-</script></p>
 
 <h3>Mar 15, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
 
 
-<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+
   </article>
 
 
@@ -159,68 +148,6 @@
 
 <div class="content">
 
-<!--<section class="inverse contact-us">
-
-    <div class="row">
-        <div class="small-12 small-text-center columns">
-            <h2>Trusted by</h2>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.coinbase.com/">
-            <div class="client client-coinbase"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.airbnb.com/">
-            <div class="client client-airbnb"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://stripe.com/">
-                <div class="client client-stripe"></div>
-            </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.uber.com/">
-            <div class="client client-uber"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://mixpanel.com/">
-            <div class="client client-mixpanel"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://wordpress.com/">
-            <div class="client client-wordpress"></div>
-          </a>
-        </div>
-    </div>
-
-
-    <div class="section-pattern">    
-        <div class="row">
-            <div class="small-10 small-centered small-text-center columns">
-
-                <p>Reach out to us if you want to see how our security audits can
-                    help your business,<br> or if you have any questions.</p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="small-12 small-centered columns small-text-center">
-                <a href="/contact" class="button large pull success">Contact</a>
-            </div>
-        </div>
-    </div>
-</section>-->
 
 </div>
 
@@ -235,7 +162,7 @@
             <li><a href="/blog">Blog</a></li>
             <li><a href="/research">Research</a></li>
             <li><a href="/contact">Contact Us</a></li>
-            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+
             </ul>
         </div>
 

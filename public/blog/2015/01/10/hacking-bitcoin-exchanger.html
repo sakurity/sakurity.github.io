@@ -13,7 +13,7 @@
 
     <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
     <meta name="keywords"
-          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+          content="Fintech Security, OAuth, Bitcoin Security, Layer2, Lightning network">
 
 
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
@@ -27,18 +27,11 @@
 
 
 
-
-
-
 </head>
 
 <body>
 
 
-<!--[if lt IE 10]>
-<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
-    your browser</a> to improve your experience.</p>
-<![endif]-->
 
 <nav class="top-bar row" data-topbar>
     <section class="top-bar-section">
@@ -48,7 +41,7 @@
             <li><a href="/blog">Blog</a></li>
             <li><a href="/research">Research</a></li>
             <li><a href="/contact">Contact Us</a></li>
-            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+
         </ul>
 
     </section>
@@ -111,12 +104,11 @@ YourWeiboCookies
 
 <p>However there was no such page on Peatio to make it leak. No external images, links or anything. The attack surface was so tiny. But then we found this in <code class="highlighter-rouge">DocumentsController</code>:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>if not @doc
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>if not @doc
   redirect_to(request.referer || root_path)
   return
 end
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>Following chain of redirects leaks the code by putting it in the <code class="highlighter-rouge">#</code> fragment first.</p>
 
@@ -137,7 +129,7 @@ end
 
 <p>There’s a gaping hole in SmsAuthsController - <code class="highlighter-rouge">two_factor_required!</code> is only called for <code class="highlighter-rouge">show</code> action, but not for <code class="highlighter-rouge">update</code> which is actually responsible for activating SMS 2FA.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>before_action :auth_member!
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>before_action :auth_member!
 before_action :find_sms_auth
 before_action :activated?
 before_action :two_factor_required!, only: [:show]
@@ -153,8 +145,7 @@ def update
     verify_code_phase
   end
 end
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>We can activate new SMS authenticator simply sending following requests straight to <code class="highlighter-rouge">update</code> action.</p>
 
@@ -183,20 +174,18 @@ phone_number%5D=9123222211&amp;sms_auth%5Botp%5D=CODE_WE_RECEIVED’</p>
 
 <p><code class="highlighter-rouge">two_factor_by_type</code> method doesn’t use <code class="highlighter-rouge">activated</code> scope so even inactive 2FA models can be used. Thus we are not going to brute SMS auth because the victim will start receiving suspicious SMS. We still can bruteforce Google Authenticator because it has seed generated and <code class="highlighter-rouge">verify?</code> method is working fine.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>def two_factor_by_type
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def two_factor_by_type
   current_user.two_factors.by_type(params[:id])
 end
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h5 id="furthermore-sms-2fa-has-two-more-issues">Furthermore, SMS 2FA has two more issues</h5>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>def gen_code
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def gen_code
   self.otp_secret = OTP_LENGTH.times.map{ Random.rand(9) + 1 }.join
   self.refreshed_at = Time.now
 end
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>First issue is <code class="highlighter-rouge">Random.rand</code> is based on PRNG (Mersenne Twister) which is easily predictable once you have enough subsequently generated numbers.</p>
 
@@ -214,7 +203,7 @@ end
 
 <p>Unfortunately, this is the worst part. The admin of Peatio can do just few more things  than a regular user. Nothing like “Send all the coins to this bad guy” or “Show API keys of all users”.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>  can :update, Proof
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  can :update, Proof
   can :manage, Document
   can :manage, Member
   can :manage, Ticket
@@ -227,8 +216,7 @@ end
   can :menu, Withdraw
   can :manage, ::Withdraws::Bank
   can :manage, ::Withdraws::Satoshi
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>The only thing we found is creating a fiat deposit of like 99999999 Chinese Yuan and then accepting it by an admin.</p>
 
@@ -243,15 +231,11 @@ end
 <p>Finally, the report is <a href="https://sakurity.com/peatio.pdf">available to download</a>.</p>
 
 
-<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/01/10/hacking-bitcoin-exchanger.html" data-text="Hacking a Bitcoin Exchange" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
-<script>
-!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
-</script></p>
 
 <h3>Jan 10, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
 
 
-<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+
   </article>
 
 
@@ -268,68 +252,6 @@ end
 
 <div class="content">
 
-<!--<section class="inverse contact-us">
-
-    <div class="row">
-        <div class="small-12 small-text-center columns">
-            <h2>Trusted by</h2>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.coinbase.com/">
-            <div class="client client-coinbase"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.airbnb.com/">
-            <div class="client client-airbnb"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://stripe.com/">
-                <div class="client client-stripe"></div>
-            </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.uber.com/">
-            <div class="client client-uber"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://mixpanel.com/">
-            <div class="client client-mixpanel"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://wordpress.com/">
-            <div class="client client-wordpress"></div>
-          </a>
-        </div>
-    </div>
-
-
-    <div class="section-pattern">    
-        <div class="row">
-            <div class="small-10 small-centered small-text-center columns">
-
-                <p>Reach out to us if you want to see how our security audits can
-                    help your business,<br> or if you have any questions.</p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="small-12 small-centered columns small-text-center">
-                <a href="/contact" class="button large pull success">Contact</a>
-            </div>
-        </div>
-    </div>
-</section>-->
 
 </div>
 
@@ -344,7 +266,7 @@ end
             <li><a href="/blog">Blog</a></li>
             <li><a href="/research">Research</a></li>
             <li><a href="/contact">Contact Us</a></li>
-            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+
             </ul>
         </div>
 

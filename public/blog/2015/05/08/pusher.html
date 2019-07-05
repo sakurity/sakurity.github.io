@@ -13,7 +13,7 @@
 
     <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
     <meta name="keywords"
-          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+          content="Fintech Security, OAuth, Bitcoin Security, Layer2, Lightning network">
 
 
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
@@ -27,18 +27,11 @@
 
 
 
-
-
-
 </head>
 
 <body>
 
 
-<!--[if lt IE 10]>
-<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
-    your browser</a> to improve your experience.</p>
-<![endif]-->
 
 <nav class="top-bar row" data-topbar>
     <section class="top-bar-section">
@@ -48,7 +41,7 @@
             <li><a href="/blog">Blog</a></li>
             <li><a href="/research">Research</a></li>
             <li><a href="/contact">Contact Us</a></li>
-            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+
         </ul>
 
     </section>
@@ -83,7 +76,7 @@
 
 <p>returns</p>
 
-<p><code class="highlighter-rouge"><span class="p">{</span><span class="nt">"auth"</span><span class="p">:</span><span class="s2">"387954142406c3c9cc13:a50a2e82cc3f8ea384fde78b28b680fc3f2de4fb3f8c36e87b0cd6d698353ab3"</span><span class="p">}</span></code>. Sending this token back to Pusher websocket will subscribe you to <code class="highlighter-rouge">private-123</code> channel.</p>
+<p><code class="highlighter-rouge">{"auth":"387954142406c3c9cc13:a50a2e82cc3f8ea384fde78b28b680fc3f2de4fb3f8c36e87b0cd6d698353ab3"}</code>. Sending this token back to Pusher websocket will subscribe you to <code class="highlighter-rouge">private-123</code> channel.</p>
 
 <p><img src="https://sakurity.com/img/pushersub.png" alt="" /></p>
 
@@ -125,13 +118,13 @@
 
 <figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="no">POST</span>
 <span class="sr">/apps/</span><span class="mi">99759</span><span class="o">/</span><span class="n">events</span>
-<span class="n">auth_key</span><span class="o">=</span><span class="mi">840543</span><span class="n">d97de9803651b1</span><span class="o">&amp;</span><span class="n">auth_timestamp</span><span class="o">=</span><span class="mi">1431504423</span><span class="o">&amp;</span><span class="n">auth_version</span><span class="o">=</span><span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="o">&amp;</span><span class="n">body_md5</span><span class="o">=</span><span class="mi">90</span><span class="n">e26738bad6c25794e97e2ca92bd7b1</span></code></pre></figure>
+<span class="n">auth_key</span><span class="o">=</span><span class="mi">840543</span><span class="n">d97de9803651b1</span><span class="o">&amp;</span><span class="n">auth_timestamp</span><span class="o">=</span><span class="mi">1431504423</span><span class="o">&amp;</span><span class="n">auth_version</span><span class="o">=</span><span class="mf">1.0</span><span class="o">&amp;</span><span class="n">body_md5</span><span class="o">=</span><span class="mi">90</span><span class="n">e26738bad6c25794e97e2ca92bd7b1</span></code></pre></figure>
 
 <p>Unfortunatelly method “authenticate” appends the name of the channel so we only can get a signature of following string:</p>
 
 <figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="no">POST</span>
 <span class="sr">/apps/</span><span class="mi">99759</span><span class="o">/</span><span class="n">events</span>
-<span class="n">auth_key</span><span class="o">=</span><span class="mi">840543</span><span class="n">d97de9803651b1</span><span class="o">&amp;</span><span class="n">auth_timestamp</span><span class="o">=</span><span class="mi">1431504423</span><span class="o">&amp;</span><span class="n">auth_version</span><span class="o">=</span><span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="o">&amp;</span><span class="n">body_md5</span><span class="o">=</span><span class="mi">90</span><span class="n">e26738bad6c25794e97e2ca92bd7b1</span><span class="ss">:private</span><span class="o">-</span><span class="mi">123</span></code></pre></figure>
+<span class="n">auth_key</span><span class="o">=</span><span class="mi">840543</span><span class="n">d97de9803651b1</span><span class="o">&amp;</span><span class="n">auth_timestamp</span><span class="o">=</span><span class="mi">1431504423</span><span class="o">&amp;</span><span class="n">auth_version</span><span class="o">=</span><span class="mf">1.0</span><span class="o">&amp;</span><span class="n">body_md5</span><span class="o">=</span><span class="mi">90</span><span class="n">e26738bad6c25794e97e2ca92bd7b1</span><span class="ss">:private</span><span class="o">-</span><span class="mi">123</span></code></pre></figure>
 
 <p>At first glance it looks like a serious obstacle, <code class="highlighter-rouge">:</code> is supposed to be URL encoded in query strings as <code class="highlighter-rouge">%3A</code>. There’s no way to get this exact string_to_sign on Pusher server side… Oh wait.</p>
 
@@ -211,15 +204,11 @@ curl "https://api.pusherapp.com</span><span class="si">#{</span><span class="n">
 <p>Previous posts about format injections: <a href="https://sakurity.com/blog/2015/03/03/duo_format_injection.html">Format Injection Vulnerability in Duo Security Web SDK</a>, <a href="https://sakurity.com/blog/2015/03/15/authy_bypass.html">How “../sms” could bypass Authy 2 Factor Authentication</a></p>
 
 
-<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/05/08/pusher.html" data-text="Hacking Pusher with simple crypto vulnerability" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
-<script>
-!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
-</script></p>
 
 <h3>May 8, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
 
 
-<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+
   </article>
 
 
@@ -236,68 +225,6 @@ curl "https://api.pusherapp.com</span><span class="si">#{</span><span class="n">
 
 <div class="content">
 
-<!--<section class="inverse contact-us">
-
-    <div class="row">
-        <div class="small-12 small-text-center columns">
-            <h2>Trusted by</h2>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.coinbase.com/">
-            <div class="client client-coinbase"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.airbnb.com/">
-            <div class="client client-airbnb"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://stripe.com/">
-                <div class="client client-stripe"></div>
-            </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.uber.com/">
-            <div class="client client-uber"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://mixpanel.com/">
-            <div class="client client-mixpanel"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://wordpress.com/">
-            <div class="client client-wordpress"></div>
-          </a>
-        </div>
-    </div>
-
-
-    <div class="section-pattern">    
-        <div class="row">
-            <div class="small-10 small-centered small-text-center columns">
-
-                <p>Reach out to us if you want to see how our security audits can
-                    help your business,<br> or if you have any questions.</p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="small-12 small-centered columns small-text-center">
-                <a href="/contact" class="button large pull success">Contact</a>
-            </div>
-        </div>
-    </div>
-</section>-->
 
 </div>
 
@@ -312,7 +239,7 @@ curl "https://api.pusherapp.com</span><span class="si">#{</span><span class="n">
             <li><a href="/blog">Blog</a></li>
             <li><a href="/research">Research</a></li>
             <li><a href="/contact">Contact Us</a></li>
-            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+
             </ul>
         </div>
 

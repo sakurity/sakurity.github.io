@@ -3,7 +3,7 @@
 <li><p><a href="https://homakov.blogspot.com/2012/03/how-to.html">Fixing Mass Assignment in Rails</a></p></li>
 
 <li><p><a href="/oauth">OAuth by Sakurity & Security Cheatsheet</a></p></li>
-<li><p><a href="/otp">One-Time-Password Bruteforce Calculator</a></p></li>
+
 
 <li><p><a href="https://homakov.blogspot.com/2013/03/hacking-github-with-webkit.html">Hacking Github with Webkit</a></p></li>
 

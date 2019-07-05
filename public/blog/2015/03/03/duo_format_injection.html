@@ -13,7 +13,7 @@
 
     <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
     <meta name="keywords"
-          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+          content="Fintech Security, OAuth, Bitcoin Security, Layer2, Lightning network">
 
 
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
@@ -27,18 +27,11 @@
 
 
 
-
-
-
 </head>
 
 <body>
 
 
-<!--[if lt IE 10]>
-<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
-    your browser</a> to improve your experience.</p>
-<![endif]-->
 
 <nav class="top-bar row" data-topbar>
     <section class="top-bar-section">
@@ -48,7 +41,7 @@
             <li><a href="/blog">Blog</a></li>
             <li><a href="/research">Research</a></li>
             <li><a href="/contact">Contact Us</a></li>
-            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+
         </ul>
 
     </section>
@@ -156,7 +149,7 @@
     <p><code class="highlighter-rouge">openURL('https://oauth/?client_id=1&amp;client_secret=2&amp;code='+params[:unescaped_code])</code> in hand-made API and OAuth implementations. Injecting code=<code class="highlighter-rouge">&amp;client_id=new_client_id&amp;client_secret=new_client_secret</code> leads to replacing client credentials with new values and authentication bypass.</p>
   </li>
   <li>
-    <p><code class="highlighter-rouge">'{"val":"'+user_input+'"}'</code> or <code class="highlighter-rouge">'<span class="nt">&lt;xml&gt;</span>'+user_input+'<span class="nt">&lt;/xml&gt;</span>'</code>, because XSS is a format injection too.</p>
+    <p><code class="highlighter-rouge">'{"val":"'+user_input+'"}'</code> or <code class="highlighter-rouge">'&lt;xml&gt;'+user_input+'&lt;/xml&gt;'</code>, because XSS is a format injection too.</p>
   </li>
   <li>
     <p>See our <a href="https://sakurity.com/blog/2014/01/02/puzzle1.html">Puzzle #1</a></p>
@@ -181,15 +174,11 @@
 
 
 
-<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2015/03/03/duo_format_injection.html" data-text="Format Injection Vulnerability in Duo Security Web SDK" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
-<script>
-!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
-</script></p>
 
 <h3>Mar 3, 2015 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
 
 
-<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+
   </article>
 
 
@@ -206,68 +195,6 @@
 
 <div class="content">
 
-<!--<section class="inverse contact-us">
-
-    <div class="row">
-        <div class="small-12 small-text-center columns">
-            <h2>Trusted by</h2>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.coinbase.com/">
-            <div class="client client-coinbase"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.airbnb.com/">
-            <div class="client client-airbnb"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://stripe.com/">
-                <div class="client client-stripe"></div>
-            </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.uber.com/">
-            <div class="client client-uber"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://mixpanel.com/">
-            <div class="client client-mixpanel"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://wordpress.com/">
-            <div class="client client-wordpress"></div>
-          </a>
-        </div>
-    </div>
-
-
-    <div class="section-pattern">    
-        <div class="row">
-            <div class="small-10 small-centered small-text-center columns">
-
-                <p>Reach out to us if you want to see how our security audits can
-                    help your business,<br> or if you have any questions.</p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="small-12 small-centered columns small-text-center">
-                <a href="/contact" class="button large pull success">Contact</a>
-            </div>
-        </div>
-    </div>
-</section>-->
 
 </div>
 
@@ -282,7 +209,7 @@
             <li><a href="/blog">Blog</a></li>
             <li><a href="/research">Research</a></li>
             <li><a href="/contact">Contact Us</a></li>
-            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+
             </ul>
         </div>
 

