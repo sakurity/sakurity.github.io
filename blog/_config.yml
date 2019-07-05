@@ -1,11 +1,10 @@
 # Site settings
 title: The Sakurity Blog
-email: info@sakurity.com
+email: homakov@gmail.com
 description: >
-  Infosec Playboy.
+  Boutique infosec consultancy
 baseurl: "/blog" # the subpath of your site, e.g. /blog/
 url: "https://sakurity.com" # the base hostname & protocol for your site
-twitter_username: sakuritynetwork
 
 # Build settings
 markdown: kramdown
