@@ -1,0 +1,168 @@
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+    <meta charset="utf-8">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.css"/>
+
+<style>
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 25px;
+  /*border-radius: 5px;*/
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.6;
+  -webkit-transition: 0.2s;
+  transition: opacity 0.2s;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4caf50;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4caf50;
+  cursor: pointer;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+<script>
+  window.onload = function(){
+
+new Vue({
+  el: '#app',
+  data: {
+    demochannels: []
+  }, 
+  methods:  {
+
+  resolveDemo: (democh) => {
+    // normalize
+    for (let arg of [
+      'ins_ondelta',
+      'ins_balance',
+      'offdelta',
+      'credit',
+      'they_credit'
+    ]) {
+      if (Number.isInteger(parseInt(democh[arg]))) {
+        democh[arg] = parseInt(democh[arg])
+      } else {
+        l(arg)
+        return false
+      }
+    }
+
+    let delta = democh.offdelta + democh.ins_ondelta
+    let insurance = democh.ins_balance
+
+    var parts = {
+      // left user promises only with negative delta, scenario 3
+      they_uninsured: delta < 0 ? -delta : 0,
+      insured: delta > insurance ? insurance : delta > 0 ? delta : 0,
+      they_insured:
+        delta > insurance ? 0 : delta > 0 ? insurance - delta : insurance,
+      // right user promises when delta > insurance, scenario 1
+      uninsured: delta > insurance ? delta - insurance : 0
+    }
+
+    var total =
+      parts.they_uninsured +
+      parts.uninsured +
+      parts.they_insured +
+      parts.insured
+
+    if (total < 100) total = 100
+
+    var bar = (amount, symbol) => {
+      if (amount > 0) {
+        return Array(1 + Math.ceil((amount * 100) / total)).join(symbol)
+      } else {
+        return ''
+      }
+    }
+
+    // visual representations of state in ascii and text
+    if (delta < 0) {
+      parts.ascii_channel =
+        '|' + bar(parts.they_uninsured, '-') + bar(parts.they_insured, '=')
+    } else if (delta < insurance) {
+      parts.ascii_channel =
+        bar(parts.insured, '=') + '|' + bar(parts.they_insured, '=')
+    } else {
+      parts.ascii_channel =
+        bar(parts.insured, '=') + bar(parts.uninsured, '-') + '|'
+    }
+
+    parts.available = delta + democh.they_credit
+
+    parts.they_available = insurance + democh.credit - delta
+
+    parts.min_offdelta = -democh.ins_ondelta - democh.they_credit
+
+    parts.max_offdelta =
+      -democh.ins_ondelta + democh.ins_balance + democh.credit
+
+    parts.width = (parts.max_offdelta - parts.min_offdelta) * 5
+
+    return parts
+  }
+  }
+})
+
+
+  }
+</script>
+  </head>
+  <body>
+    
+
+<div class="container" id=app>
+<br>
+<p><b>Deposit X into a channel (onchain)</b>: increase <b>insurance balance</b> by this amount and also increase <b>ondelta</b> if you deposit to the Left user.</p>
+<p><b>Withdraw X from a channel (onchain)</b>: decrease insurance by this amount and also decrease <b>ondelta</b> if you withdraw from the Left user.</p>
+<p><b>Make instant payment (offchain)</b>: move the <b>offdelta slider towards sender</b> - to the left if you are Left user and to the right if you're Right.</p>
+<p><b>Extend capacity with credit (offchain):</b> Extended Lightning allows opening a credit line in either direction.</p>
+<div class="alert alert-info" v-for="democh in demochannels">
+  
+  <div style="position:relative;">
+    <br>
+    <div v-if="democh.ins_balance>0" class="slider" style="display:inline-flex;background-color:green; pointer-events: none;position:absolute;" :style="{width: (democh.ins_balance*5)+'px', left: (democh.they_credit*5)+'px'}">&nbsp;</div>
+    <input type="range" :style="{width: resolveDemo(democh).width+'px'}" :min="resolveDemo(democh).min_offdelta" :max="resolveDemo(democh).max_offdelta" value="0" class="slider" v-model="democh.offdelta">
+  </div>
+  <div>
+
+    Collateral:
+  <input style="width:50px" v-model="democh.ins_balance"> / Ondelta
+  <input style="width:50px" v-model="democh.ins_ondelta">
+
+    / Offdelta: <b>{{democh.offdelta}} (min {{resolveDemo(democh).min_offdelta}} max {{resolveDemo(democh).max_offdelta}})</b>
+
+
+   <br><br>
+
+    <b>(Left)</b> Credit:
+    <input style="width:50px" v-model="democh.credit"> / Available: {{resolveDemo(democh).available}} / Insured: {{resolveDemo(democh).insured}} / Uninsured: {{resolveDemo(democh).uninsured}}
+
+    <span style="float:right"><b>(Right)</b> Credit: <input  style="width:50px" v-model="democh.they_credit"> / Available: {{resolveDemo(democh).they_available}} / Insured: {{resolveDemo(democh).they_insured}} / Uninsured: {{resolveDemo(democh).they_uninsured}}</span>
+  </div>
+</div>
+<button class="btn btn-success" @click="demochannels.push({ins_balance: '0', ins_ondelta:'0', offdelta: '0', credit:'0', they_credit:'0'})">Add Demo Channel</button>
+</div>
+
+
+  </body></html>
