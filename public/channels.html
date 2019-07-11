@@ -140,6 +140,7 @@ new Vue({
 <div class="alert alert-info" v-for="democh in demochannels">
   
   <div style="position:relative;">
+    Offdelta: <b>{{democh.offdelta}} (min {{resolveDemo(democh).min_offdelta}} max {{resolveDemo(democh).max_offdelta}})</b>
     <br>
     <div v-if="democh.ins_balance>0" class="slider" style="display:inline-flex;background-color:green; pointer-events: none;position:absolute;" :style="{width: (democh.ins_balance*5)+'px', left: (democh.they_credit*5)+'px'}">&nbsp;</div>
     <input type="range" :style="{width: resolveDemo(democh).width+'px'}" :min="resolveDemo(democh).min_offdelta" :max="resolveDemo(democh).max_offdelta" value="0" class="slider" v-model="democh.offdelta">
@@ -149,8 +150,6 @@ new Vue({
     Collateral:
   <input style="width:50px" v-model="democh.ins_balance"> / Ondelta
   <input style="width:50px" v-model="democh.ins_ondelta">
-
-    / Offdelta: <b>{{democh.offdelta}} (min {{resolveDemo(democh).min_offdelta}} max {{resolveDemo(democh).max_offdelta}})</b>
 
 
    <br><br>
