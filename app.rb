@@ -97,10 +97,12 @@ racer = lambda do
   $AVG = [] if params[:reset_avg]
  
   sleep params[:sleep].to_f if params[:sleep] 
+  avg = $AVG.inject{ |sum, el| sum + el }.to_f / $AVG.size
 
-  "now #{now} - #{params[:a]}
-  diff #{diff}
-  avg #{$AVG.inject{ |sum, el| sum + el }.to_f / $AVG.size}
+  "now #{now.round(4)} - #{params[:a]}
+  diff #{diff.round(4)}
+  avg #{avg.round(4)}
+
   "
 
 end
