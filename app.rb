@@ -87,7 +87,7 @@ put '/jqueryxss', &jq
 
 $LAST = 0
 racer = lambda do
-  now = Time.now.to_f.to_s
+  now = Time.now.to_f
   diff = now - $LAST
   $LAST = now
 
