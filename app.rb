@@ -85,6 +85,15 @@ get '/jqueryxss', &jq
 post '/jqueryxss', &jq
 put '/jqueryxss', &jq
 
+racer = lambda do
+  Time.now.to_f.to_s
+end
+
+head '/r', &racer
+get '/r', &racer
+post '/r', &racer
+put '/r', &racer
+
 
 
 
