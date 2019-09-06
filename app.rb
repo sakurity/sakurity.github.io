@@ -86,16 +86,21 @@ post '/jqueryxss', &jq
 put '/jqueryxss', &jq
 
 $LAST = 0
+$AVG = []
 racer = lambda do
   now = Time.now.to_f
   diff = now - $LAST
   $LAST = now
 
+  $AVG.push(diff) if diff < 5
+
+  $AVG = [] if params[:reset_avg]
  
   sleep params[:sleep].to_f if params[:sleep] 
 
   "now #{now} - #{params[:a]}
   diff #{diff}
+  avg #{$AVG.inject{ |sum, el| sum + el }.to_f / $AVG.size}
   "
 
 end
