@@ -85,8 +85,19 @@ get '/jqueryxss', &jq
 post '/jqueryxss', &jq
 put '/jqueryxss', &jq
 
+$LAST = 0
 racer = lambda do
-  Time.now.to_f.to_s
+  now = Time.now.to_f.to_s
+  diff = now - $LAST
+  $LAST = now
+
+ 
+  sleep params[:sleep].to_f if params[:sleep] 
+
+  "now #{now} - #{params[:a]}
+  diff #{diff}
+  "
+
 end
 
 head '/r', &racer
