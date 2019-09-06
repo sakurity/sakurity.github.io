@@ -102,6 +102,7 @@ racer = lambda do
   "now #{now.round(4)} - #{params[:a]}
   diff #{diff.round(4)}
   avg #{avg.round(4)}
+  ip #{request.ip} #{@env['REMOTE_ADDR'] }
 
   "
 
