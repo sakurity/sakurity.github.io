@@ -1,1 +1,0 @@
-// web: ./tor/bin/run_tor ruby app.rb
