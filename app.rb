@@ -8,7 +8,7 @@ require 'net/http'
 require 'json'
 require 'rdiscount'
 
-gem 'unicorn'
+#gem 'unicorn'
 
 set :markdown , :layout_engine => :erb
 set :views, settings.root
