@@ -1,0 +1,105 @@
+<!doctype html>
+<html class="no-js" xmlns="https://www.w3.org/1999/xhtml"
+      xmlns:fb="https://ogp.me/ns/fb#">
+<head>
+    <meta charset="utf-8">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+<script>
+  window.onmessage = function(e){
+    //if (e.origin == 'https://airbnb.com')
+    window.raw_listings = JSON.parse(e.data)
+    window.app.sortAndFilter()
+  }
+
+  window.onload = function(){
+
+    window.app = new Vue({
+      el: '#app',
+      data: {
+        min_reviews: 15,
+        min_rating: 4.8,
+        sort_by: 'price',
+
+        sorted: Object.freeze([])
+      }, 
+      methods:  {
+        bookLink: function(l){
+          return 'https://www.airbnb.com/rooms/'+l.id+'?adults=2&check_in=2019-11-26&check_out=2019-11-28';
+
+        },
+        sortAndFilter: function() {
+
+          var sorted = window.raw_listings.sort(function(a, b){
+            if (window.app.sort_by == 'price') {
+              return a.pricing_quote.price.total.amount-b.pricing_quote.price.total.amount
+
+            } else if (window.app.sort_by == 'reviews_count') {
+              return b.reviews_count - a.reviews_count
+
+            } else if (window.app.sort_by == 'avg_rating') {
+              return (b.avg_rating ? b.avg_rating : 0) - (a.avg_rating ? a.avg_rating : 0)
+            }
+          })
+
+          let min_reviews = Number(window.app.min_reviews)
+          let min_rating = Number(window.app.min_rating)
+
+          var sorted = sorted.filter(function(l){
+            // new flats assume 0 rating
+            let rating = l.avg_rating ? l.avg_rating : 0
+
+            if (l.reviews_count >= min_reviews &&
+              rating >= min_rating){
+              return true 
+            } else {
+              console.log('fail', l)
+              return false
+            }
+          })
+
+          console.log(sorted)
+
+          this.sorted = sorted
+        }
+      }
+    })
+
+
+  }
+</script>
+  </head>
+<body>
+  <div class="container" id=app>
+    <input @change="sortAndFilter()" style="width:50px" v-model="min_reviews"> min reviews
+    <input @change="sortAndFilter()" style="width:50px" v-model="min_rating"> min rating / found <b>{{sorted.length}}</b>
+
+    <select v-model="sort_by" @change="sortAndFilter()">
+      <option value="price">Price (low to high)</option>
+      <option value="reviews_count">Reviews count</option>
+      <option value="avg_rating">Avg rating</option>
+    </select>
+
+    <div v-if="sorted.length > 100">
+      <h1>Too many listings to display.</h1>
+    </div>
+    <div v-else class="alert alert-info" v-for="l in sorted">
+      
+      <h3><a :href="bookLink(l)">
+       {{l.pricing_quote.price.total.amount_formatted}} - {{l.avg_rating}}({{l.reviews_count}}) - {{l.name}}
+      </a></h3>
+
+      <div>
+        <img v-for="pic in l.picture_urls" :src="pic" height="100px"> 
+      </div>
+
+    </div>
+  </div>
+
+
+
+
+</body></html>
