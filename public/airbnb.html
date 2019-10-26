@@ -11,11 +11,12 @@
 <script>
   window.onmessage = function(e){
     //if (e.origin == 'https://airbnb.com')
-    window.raw_listings = JSON.parse(e.data)
+    window.json = JSON.parse(e.data)
     window.app.sortAndFilter()
   }
 
   window.onload = function(){
+    opener.postMessage('ready', '*')
 
     window.app = new Vue({
       el: '#app',
@@ -33,7 +34,7 @@
         },
         sortAndFilter: function() {
 
-          var sorted = window.raw_listings.sort(function(a, b){
+          var sorted = window.json.listings.sort(function(a, b){
             if (window.app.sort_by == 'price') {
               return a.pricing_quote.price.total.amount-b.pricing_quote.price.total.amount
 
