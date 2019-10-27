@@ -1,6 +1,6 @@
-var search_params_str = `_format=for_explore_search_web&adults=2&auto_ib=true&currency=EUR&current_tab_id=home_tab&fetch_filters=true&has_zero_guest_treatment=true&hide_dates_and_guests_filters=false&is_guided_search=true&is_new_cards_experiment=true&is_standard_search=true&locale=en&metadata_only=false&price_max=112&price_min=75&query_understanding_enabled=true&refinement_paths%5B%5D=%2Fhomes&selected_tab_id=home_tab&show_groupings=true`
+var search_params_str = `_format=for_explore_search_web&adults=2&auto_ib=true&currency=EUR&current_tab_id=home_tab&fetch_filters=true&has_zero_guest_treatment=true&hide_dates_and_guests_filters=false&is_guided_search=true&is_new_cards_experiment=true&is_standard_search=true&locale=en&metadata_only=false&query_understanding_enabled=true&refinement_paths%5B%5D=%2Fhomes&selected_tab_id=home_tab&show_groupings=true`
 var hunterURL = 'https://sakurity.com/airbnb.html'
-hunterURL = 'http://l:4567/airbnb.html'
+//hunterURL = 'http://l:4567/airbnb.html'
 
 async function getJSON(url){
   return await fetch(url)
@@ -24,7 +24,6 @@ var federated_search_session_id = false
 
 
 async function parsePages() {
-  //hunterIncrement.value
   anything_left = true
   items_offset = 0
   last_search_session_id = false
@@ -33,12 +32,22 @@ async function parsePages() {
 
   var href = new URLSearchParams(location.href)
 
+  var increment = Number(hunterIncrement.value)
+  var current_price_min = Number(href.get('price_min'))
+  var final_price_max = Number(href.get('price_max'))
+
+  if (increment == 0) {
+    var current_price_max = final_price_max
+  } else {
+    var current_price_max = current_price_min + increment  
+  }
+
 
   var dataState = JSON.parse(document.getElementById('data-state').innerHTML)
   var api_key = dataState.bootstrapData['layout-init'].api_config.key
 
 
-  var filters = dataState.bootstrapData.reduxData.exploreTab.responseFilters
+  //var filters = dataState.bootstrapData.reduxData.exploreTab.responseFilters
   //href.get('price_min')
 
   while(anything_left) {
@@ -47,24 +56,13 @@ async function parsePages() {
     search_params.set('items_offset', items_offset)
     search_params.set('key', api_key)
 
+    var clone = ['room_types[]', 'ib', 'place_id', 'query', 'checkin', 'checkout', 'ne_lat', 'ne_lng', 'sw_lat', 'sw_lng', 'adults', 'infants', 'children', 'min_bedrooms', 'min_bathrooms', 'min_beds']
+    for (var str of clone){
+      search_params.set(str, href.get(str))
+    }
 
-    search_params.set('place_id', href.get('place_id'))
-    search_params.set('query', href.get('query'))
-
-
-    search_params.set('checkin', href.get('checkin'))
-    search_params.set('checkout', href.get('checkout'))
-
-    search_params.set('ne_lat', href.get('ne_lat'))
-    search_params.set('ne_lng', href.get('ne_lng'))
-    search_params.set('sw_lat', href.get('sw_lat'))
-    search_params.set('sw_lng', href.get('sw_lng'))
-
-    search_params.set('adults', href.get('adults'))
-
-    search_params.set('price_min', href.get('price_min'))
-    search_params.set('price_max', href.get('price_max'))
-
+    search_params.set('price_min', current_price_min)
+    search_params.set('price_max', current_price_max)
     
     if (last_search_session_id)
     search_params.set('last_search_session_id', last_search_session_id)
@@ -96,8 +94,20 @@ async function parsePages() {
       last_search_session_id = section.search_session_id
       federated_search_session_id = json.metadata.federated_search_session_id
     } else {
-      console.log('final page '+section.listings.length)
-      anything_left = false
+      if (current_price_max < final_price_max) {
+        current_price_min += increment
+        current_price_max += increment
+
+        // gone too far
+        if (current_price_max > final_price_max) {
+          current_price_max = final_price_max
+        }
+
+        items_offset = 0
+      } else {
+        console.log('final page '+section.listings.length)
+        anything_left = false
+      }
     }
 
     hunterExport.innerHTML = `Export - `+unique_ids.length
