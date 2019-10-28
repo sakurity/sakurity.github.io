@@ -1,16 +1,20 @@
-/* Airbnb Hunter - find top rated Airbnb apartments 
+/* Airbnb Hunter - find top rated Airbnb apartments
+Before: up to 306 rated by vogue and inconsistent internal Airbnb ranking algorithm. No sorting opportunities.
+With this tool: Extract thousands of listings in a popular city, sort by price, review count or average rating.
 
 Step 1.
-Select specific city on airbnb.com and use as many filters as possible. You must set min and max price. Also move the map so URL contains nw_lat/lng params
+Select specific city on airbnb.com and use as many filters as possible. You must set min and max price. Also move the map so URL contains sw_lat/lng params
 
 Step 2.
 Execute code below in web console on that page
 
 Step 2. 
-Select price step to split and scan through large database ($10-$50)
+Airbnb never returns more than 306 listings in one search, so we have to split our searches in price ranges.
+Select price step to split and scan through large database ($10-$50).
+If you get up to 5 pages during the scan sometimes, use smaller price step.
 
 Step 3. 
-Export the listings and further fine tune the filters on another page
+Repeat the scan in other areas if you want to add extra listings. In the end, export the listings and further fine tune your requirements on another page
 */
 var hunterURL = 'https://sakurity.com/airbnb.html'
 //hunterURL = 'http://l:4567/airbnb.html'
@@ -69,7 +73,7 @@ async function parsePages() {
     search_params.set('items_offset', items_offset)
     search_params.set('key', api_key)
 
-    var clone = ['zoom', 'current_tab_id', 'selected_tab_id', 'room_types[]', 'ib', 'place_id', 'query', 'checkin', 'checkout', 'ne_lat', 'ne_lng', 'sw_lat', 'sw_lng', 'adults', 'infants', 'children', 'min_bedrooms', 'min_bathrooms', 'min_beds']
+    var clone = ['search_by_map', 'zoom', 'current_tab_id', 'selected_tab_id', 'room_types[]', 'ib', 'place_id', 'query', 'checkin', 'checkout', 'ne_lat', 'ne_lng', 'sw_lat', 'sw_lng', 'adults', 'infants', 'children', 'min_bedrooms', 'min_bathrooms', 'min_beds']
     for (var str of clone){
       if (href.get(str) != null)
       search_params.set(str, href.get(str))
