@@ -109,7 +109,7 @@
     <div class="alert alert-info" v-for="l in sorted.slice(0,100)">
       
       <h3><a :href="bookLink(l)">
-       {{priceType(l)}} - {{l.avg_rating}}({{l.reviews_count}}) - {{l.name}}
+       {{toPrice(l)}} - {{l.avg_rating}}({{l.reviews_count}}) - {{l.name}}
       </a></h3>
 
       <div>
