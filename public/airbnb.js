@@ -56,8 +56,9 @@ async function parsePages() {
     search_params.set('items_offset', items_offset)
     search_params.set('key', api_key)
 
-    var clone = ['room_types[]', 'ib', 'place_id', 'query', 'checkin', 'checkout', 'ne_lat', 'ne_lng', 'sw_lat', 'sw_lng', 'adults', 'infants', 'children', 'min_bedrooms', 'min_bathrooms', 'min_beds']
+    var clone = ['zoom', 'current_tab_id', 'selected_tab_id', 'room_types[]', 'ib', 'place_id', 'query', 'checkin', 'checkout', 'ne_lat', 'ne_lng', 'sw_lat', 'sw_lng', 'adults', 'infants', 'children', 'min_bedrooms', 'min_bathrooms', 'min_beds']
     for (var str of clone){
+      if (href.get(str) != null)
       search_params.set(str, href.get(str))
     }
 
@@ -70,7 +71,7 @@ async function parsePages() {
     if (federated_search_session_id)
     search_params.set('federated_search_session_id', federated_search_session_id)
     
-    console.log('offset', items_offset)
+    console.log('offset', items_offset, 'prices', current_price_min, current_price_max)
 
     var json = await getJSON('https://www.airbnb.com/api/v2/explore_tabs?'+search_params.toString())
     var section = extractSection(json) 
