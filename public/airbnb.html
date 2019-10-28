@@ -30,6 +30,15 @@
         sorted: Object.freeze([])
       }, 
       methods:  {
+        toPrice: function(l){
+          if (window.app.price_type == 'total'){
+            return l.pricing_quote.price.total.amount_formatted
+          } else {
+            let t = l.pricing_quote.price.price_items[0].localized_title
+            let days = Number(t.split(' x ')[1].split(' ')[0])
+            return ((l.pricing_quote.price.total.amount_formatted / days) / 100).toFixed(2)
+          }
+        },
         bookLink: function(l){
           // nesting href params from search page
           return 'https://www.airbnb.com/rooms/'+l.id+'?'+window.json.href;
@@ -40,6 +49,8 @@
             if (window.app.sort_by == 'price') {
               return a.pricing_quote.price.total.amount-b.pricing_quote.price.total.amount
 
+            } else if (window.app.sort_by == 'price_rev') {
+              return b.pricing_quote.price.total.amount-a.pricing_quote.price.total.amount
             } else if (window.app.sort_by == 'reviews_count') {
               return b.reviews_count - a.reviews_count
 
@@ -80,19 +91,25 @@
     <input @change="sortAndFilter()" style="width:50px" v-model="min_reviews"> min reviews
     <input @change="sortAndFilter()" style="width:50px" v-model="min_rating"> min rating / found <b>{{sorted.length}}</b>
 
+    <select v-model="price_type" @change="sortAndFilter()">
+      <option value="total">Total price</option>
+      <option value="per_night">Price per night</option>
+    </select>
+
     <select v-model="sort_by" @change="sortAndFilter()">
       <option value="price">Price (low to high)</option>
+      <option value="price_rev">Price (high to low)</option>
       <option value="reviews_count">Reviews count</option>
       <option value="avg_rating">Avg rating</option>
     </select>
 
     <div v-if="sorted.length > 100">
-      <h1>Too many listings to display.</h1>
+      <h1>Showing only top 100 listings.</h1>
     </div>
-    <div v-else class="alert alert-info" v-for="l in sorted">
+    <div class="alert alert-info" v-for="l in sorted.slice(0,100)">
       
       <h3><a :href="bookLink(l)">
-       {{l.pricing_quote.price.total.amount_formatted}} - {{l.avg_rating}}({{l.reviews_count}}) - {{l.name}}
+       {{priceType(l)}} - {{l.avg_rating}}({{l.reviews_count}}) - {{l.name}}
       </a></h3>
 
       <div>

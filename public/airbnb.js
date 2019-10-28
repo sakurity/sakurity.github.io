@@ -122,7 +122,7 @@ function exportListings() {
   window.addEventListener('message',function(e){
     if (e.data =='ready'){
       console.log('exporting data')
-      w.postMessage(JSON.stringify({listings: exportable, href: href.toString()}), '*')
+      w.postMessage(JSON.stringify({listings: exportable, href: location.href.split('?')[1]}), '*')
     }
   })
 }
