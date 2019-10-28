@@ -38,7 +38,7 @@
           } else {
             let t = l.pricing_quote.price.price_items[0].localized_title
             let days = Number(t.split(' x ')[1].split(' ')[0])
-            return ((l.pricing_quote.price.total.amount / days)).toFixed(2)
+            return ((l.pricing_quote.price.total.amount / days)).toFixed(0)
           }
         },
         bookLink: function(l){

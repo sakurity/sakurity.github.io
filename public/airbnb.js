@@ -1,3 +1,17 @@
+/* Airbnb Hunter - find top rated Airbnb apartments 
+
+Step 1.
+Select specific city on airbnb.com and use as many filters as possible. You must set min and max price. Also move the map so URL contains nw_lat/lng params
+
+Step 2.
+Execute code below in web console on that page
+
+Step 2. 
+Select price step to split and scan through large database ($10-$50)
+
+Step 3. 
+Export the listings and further fine tune the filters on another page
+*/
 var hunterURL = 'https://sakurity.com/airbnb.html'
 //hunterURL = 'http://l:4567/airbnb.html'
 
