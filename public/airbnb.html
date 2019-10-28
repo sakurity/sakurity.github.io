@@ -12,6 +12,8 @@
   window.onmessage = function(e){
     //if (e.origin == 'https://airbnb.com')
     window.json = JSON.parse(e.data)
+
+
     window.app.sortAndFilter()
   }
 
@@ -29,8 +31,8 @@
       }, 
       methods:  {
         bookLink: function(l){
-          return 'https://www.airbnb.com/rooms/'+l.id+'?adults=2&check_in=2019-11-26&check_out=2019-11-28';
-
+          // nesting href params from search page
+          return 'https://www.airbnb.com/rooms/'+l.id+'?'+window.json.href;
         },
         sortAndFilter: function() {
 
@@ -94,7 +96,7 @@
       </a></h3>
 
       <div>
-        <img v-for="pic in l.picture_urls" :src="pic" height="100px"> 
+        <img v-for="pic in l.picture_urls.slice(0,10)" :src="pic" height="100px"> 
       </div>
 
     </div>

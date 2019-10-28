@@ -1,4 +1,3 @@
-var search_params_str = `_format=for_explore_search_web&adults=2&auto_ib=true&currency=EUR&current_tab_id=home_tab&fetch_filters=true&has_zero_guest_treatment=true&hide_dates_and_guests_filters=false&is_guided_search=true&is_new_cards_experiment=true&is_standard_search=true&locale=en&metadata_only=false&query_understanding_enabled=true&refinement_paths%5B%5D=%2Fhomes&selected_tab_id=home_tab&show_groupings=true`
 var hunterURL = 'https://sakurity.com/airbnb.html'
 //hunterURL = 'http://l:4567/airbnb.html'
 
@@ -51,7 +50,7 @@ async function parsePages() {
   //href.get('price_min')
 
   while(anything_left) {
-    var search_params = new URLSearchParams(search_params_str)
+    var search_params = new URLSearchParams(location.href)
     search_params.set('items_per_grid', items_per_grid)
     search_params.set('items_offset', items_offset)
     search_params.set('key', api_key)
@@ -71,7 +70,8 @@ async function parsePages() {
     if (federated_search_session_id)
     search_params.set('federated_search_session_id', federated_search_session_id)
     
-    console.log('offset', items_offset, 'prices', current_price_min, current_price_max)
+    hunterParse.innerHTML = `Page `+(items_offset/items_per_grid)+' range '+current_price_min+'..'+current_price_max+' page ' 
+
 
     var json = await getJSON('https://www.airbnb.com/api/v2/explore_tabs?'+search_params.toString())
     var section = extractSection(json) 
@@ -106,8 +106,8 @@ async function parsePages() {
 
         items_offset = 0
       } else {
-        console.log('final page '+section.listings.length)
         anything_left = false
+        hunterParse.innerHTML = 'Parse'
       }
     }
 
@@ -122,7 +122,7 @@ function exportListings() {
   window.addEventListener('message',function(e){
     if (e.data =='ready'){
       console.log('exporting data')
-      w.postMessage(JSON.stringify({listings: exportable}), '*')
+      w.postMessage(JSON.stringify({listings: exportable, href: href.toString()}), '*')
     }
   })
 }
