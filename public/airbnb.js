@@ -1,6 +1,8 @@
 /* Airbnb Hunter - find top rated Airbnb apartments
-Before: up to 306 rated by vogue and inconsistent internal Airbnb ranking algorithm. No sorting opportunities.
-With this tool: Extract thousands of listings in a popular city, sort by price, review count or average rating.
+
+Before: up to 306 rated by vague and inconsistent internal Airbnb ranking algorithm. No sorting opportunities - you are shown what they decide to show you.
+
+With this tool: Extract thousands of listings in a popular city, then sort by price, review count or average rating. 
 
 Step 1.
 Select specific city on airbnb.com and use as many filters as possible. You must set min and max price. Also move the map so URL contains sw_lat/lng params
@@ -8,13 +10,13 @@ Select specific city on airbnb.com and use as many filters as possible. You must
 Step 2.
 Execute code below in web console on that page
 
-Step 2. 
+Step 3. 
 Airbnb never returns more than 306 listings in one search, so we have to split our searches in price ranges.
 Select price step to split and scan through large database ($10-$50).
 If you get up to 5 pages during the scan sometimes, use smaller price step.
 
-Step 3. 
-Repeat the scan in other areas if you want to add extra listings. In the end, export the listings and further fine tune your requirements on another page
+Step 4. 
+Move the map and scan again to add another neighborhood. In the end, export the listings and further fine tune your requirements on another page
 */
 var hunterURL = 'https://sakurity.com/airbnb.html'
 //hunterURL = 'http://l:4567/airbnb.html'
