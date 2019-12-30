@@ -94,8 +94,8 @@
     <input @change="sortAndFilter()" style="width:50px" v-model="min_rating"> min rating / found <b>{{sorted.length}}</b>
 
     <select v-model="price_type" @change="sortAndFilter()">
-      <option value="total">Total price</option>
       <option value="per_night">Price per night</option>
+      <option value="total">Total price</option>
     </select>
 
     <select v-model="sort_by" @change="sortAndFilter()">
@@ -106,7 +106,7 @@
     </select>
 
     <div v-if="sorted.length > 100">
-      <h1>Showing only top 100 listings.</h1>
+      <h1>Showing only first 100 listings.</h1>
     </div>
     <div class="alert alert-info" v-for="l in sorted.slice(0,100)">
       

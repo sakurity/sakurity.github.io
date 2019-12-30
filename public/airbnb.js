@@ -29,71 +29,65 @@ async function getJSON(url){
 }
 
 function extractSection(json){
-  return (json.explore_tabs[0].sections).find(o=>o.section_component_type=="LISTINGS_GRID")
+
+  let sec = (json.explore_tabs[0].sections)
+  return sec.find(o=>o.section_component_type=="LISTINGS_GRID")
 }
 
 var exportable = []
 var unique_ids = []
-
-var anything_left = true
-var items_offset = 0
+var count_by_range = {}
 var items_per_grid = 50
-var last_search_session_id = false
-var federated_search_session_id = false
+
+var dataState = JSON.parse(document.getElementById('data-state').innerHTML)
+var api_key = dataState.bootstrapData['layout-init'].api_config.key
 
 
-async function parsePages() {
-  anything_left = true
-  items_offset = 0
-  last_search_session_id = false
-  federated_search_session_id = false
+async function parsePriceRange(c) {
+  console.log('Parcing from '+c.min+' to '+c.max)
 
+  c.anything_left = true
+  c.items_offset = 0
 
-  var href = new URLSearchParams(location.href)
-
-  var increment = Number(hunterIncrement.value)
-  var current_price_min = Number(href.get('price_min'))
-  var final_price_max = Number(href.get('price_max'))
-
-  if (increment == 0) {
-    var current_price_max = final_price_max
-  } else {
-    var current_price_max = current_price_min + increment  
-  }
-
-
-  var dataState = JSON.parse(document.getElementById('data-state').innerHTML)
-  var api_key = dataState.bootstrapData['layout-init'].api_config.key
-
-
-  //var filters = dataState.bootstrapData.reduxData.exploreTab.responseFilters
-  //href.get('price_min')
-
-  while(anything_left) {
-    var search_params = new URLSearchParams(location.href)
+  while(c.anything_left) {
+    var search_params = new URLSearchParams(location.href.split('?')[1])
     search_params.set('items_per_grid', items_per_grid)
-    search_params.set('items_offset', items_offset)
+    search_params.set('items_offset', c.items_offset)
     search_params.set('key', api_key)
 
+
+     //  for what?
     var clone = ['search_by_map', 'zoom', 'current_tab_id', 'selected_tab_id', 'room_types[]', 'ib', 'place_id', 'query', 'checkin', 'checkout', 'ne_lat', 'ne_lng', 'sw_lat', 'sw_lng', 'adults', 'infants', 'children', 'min_bedrooms', 'min_bathrooms', 'min_beds']
     for (var str of clone){
-      if (href.get(str) != null)
-      search_params.set(str, href.get(str))
+      if (c.href.get(str) != null)
+      search_params.set(str, c.href.get(str))
     }
 
-    search_params.set('price_min', current_price_min)
-    search_params.set('price_max', current_price_max)
+    search_params.set('price_min', c.min)
+    search_params.set('price_max', c.max)
     
-    if (last_search_session_id)
-    search_params.set('last_search_session_id', last_search_session_id)
+    if (c.last_search_session_id)
+    search_params.set('last_search_session_id', c.last_search_session_id)
     
-    if (federated_search_session_id)
-    search_params.set('federated_search_session_id', federated_search_session_id)
+    if (c.federated_search_session_id)
+    search_params.set('federated_search_session_id', c.federated_search_session_id)
     
-    hunterParse.innerHTML = `Page `+(items_offset/items_per_grid)+' range '+current_price_min+'..'+current_price_max+' page ' 
+    hunterParse.innerHTML = `Parsing page `+((c.items_offset/items_per_grid)+1)+' range '+c.min+'..'+c.max 
 
+    //console.log("Request listings: ", search_params.toString())
+    var json = await getJSON(location.origin+'/api/v2/explore_tabs?'+search_params.toString())
 
-    var json = await getJSON('https://www.airbnb.com/api/v2/explore_tabs?'+search_params.toString())
+    if (json.explore_tabs[0].home_tab_metadata.listings_count>300){
+      let half = Math.round((c.max-c.min)/2)
+
+      console.log("Bisect in half $"+half)
+      
+      return await Promise.all([parsePriceRange(Object.assign({}, c, {max: c.min+half})), 
+        parsePriceRange(Object.assign({}, c, {min: c.min+half}))])
+    } else {
+      count_by_range[c.max] = json.explore_tabs[0].home_tab_metadata.listings_count
+    }
+
     var section = extractSection(json) 
     if (section.listings.length > 0) {
       for (let l of section.listings) {
@@ -104,35 +98,52 @@ async function parsePages() {
           unique_ids.push(l.listing.id)
         }
       }
+    } else {
+      console.log('Empty listings')
     }
 
-    //document.findbyid update count
-
-    // last page
+    // repeat
     if (json.explore_tabs[0].pagination_metadata.has_next_page) {
-      items_offset += items_per_grid
+      c.items_offset += items_per_grid
 
-      last_search_session_id = section.search_session_id
-      federated_search_session_id = json.metadata.federated_search_session_id
+      c.last_search_session_id = section.search_session_id
+      c.federated_search_session_id = json.metadata.federated_search_session_id
     } else {
-      if (current_price_max < final_price_max) {
-        current_price_min += increment
-        current_price_max += increment
 
-        // gone too far
-        if (current_price_max > final_price_max) {
-          current_price_max = final_price_max
-        }
-
-        items_offset = 0
-      } else {
-        anything_left = false
-        hunterParse.innerHTML = 'Parse'
-      }
+      // break loop
+      c.anything_left = false
     }
 
     hunterExport.innerHTML = `Export - `+unique_ids.length
   }
+}
+
+
+async function initParse() {
+  var c = {}
+
+
+  c.anything_left = true
+  c.items_offset = 0
+  c.last_search_session_id = false
+  c.federated_search_session_id = false
+
+  c.href = new URLSearchParams(location.href.split('?')[1])
+
+  if (c.href.get('sw_lat') == null) {
+    alert("Slightly move the map")
+    return
+  }
+
+  // set initial price range
+  c.min = Number(c.href.get('price_min'))
+  c.max = Number(c.href.get('price_max'))
+
+  if (!c.min) c.min = 0
+  if (!c.max) c.max = 400
+
+  await parsePriceRange(c)
+  hunterParse.innerHTML = 'Parse'
 
 
 }
@@ -149,12 +160,11 @@ function exportListings() {
 
 var div = document.createElement('div')
 div.innerHTML =`<div style="position:fixed;left:45%;top:0px;z-index:99999;background-color: yellow;  padding: 20px;">
-<input style="width:50px" id="hunterIncrement" placeholder="Increments" value="0"> 
 <a href="#" id="hunterParse">Parse</a> | 
 <a href="#" id="hunterExport">Export - 0</a>
 </div>`
 document.body.appendChild(div)
-hunterParse.onclick=parsePages
+hunterParse.onclick=initParse
 hunterExport.onclick=exportListings
 
 
