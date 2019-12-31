@@ -17,7 +17,7 @@
     for(let l of window.json.listings){
       l.sqm = reg.exec(l.name)
       // 0 if not provided
-      l.sqm = l.sqm ? Number(l.sqm) : 0
+      l.sqm = l.sqm ? Number(l.sqm[1]) : 0
     }
 
 
