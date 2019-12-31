@@ -66,7 +66,7 @@
               sqm_a = sqm_a ? Number(sqm_a[1]) : 0
               let sqm_b = reg.exec(b.name)
               sqm_b = sqm_b ? Number(sqm_b[1]) : 0
-              console.log("Compare ", sqm_b, sqm_a)
+              console.log("Comparing ", sqm_b, sqm_a)
               return sqm_b - sqm_a
             }
           })
@@ -118,7 +118,7 @@
       <option value="price_rev">Price (high to low)</option>
       <option value="reviews_count">Reviews count</option>
       <option value="avg_rating">Avg rating</option>
-      <option value="sqm">By sqm in the name</option>
+      <option value="by_sqm">By sqm in the name</option>
     </select>
     <input @change="sortAndFilter()" type="checkbox" v-model="require_sqm"> Require "sqm"
 
