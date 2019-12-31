@@ -139,8 +139,10 @@ async function initParse() {
   c.min = Number(c.href.get('price_min'))
   c.max = Number(c.href.get('price_max'))
 
-  if (!c.min) c.min = 0
-  if (!c.max) c.max = 400
+  if (!c.min || !c.max) {
+    alert("Set price range")
+    return
+  }
 
   await parsePriceRange(c)
   hunterParse.innerHTML = 'Parse'
@@ -159,7 +161,7 @@ function exportListings() {
 }
 
 var div = document.createElement('div')
-div.innerHTML =`<div style="position:fixed;left:45%;top:0px;z-index:99999;background-color: yellow;  padding: 20px;">
+div.innerHTML =`<div style="position:fixed;left:45%;top:0px;z-index:99999;background-color: bisque;  padding: 20px;">
 <a href="#" id="hunterParse">Parse</a> | 
 <a href="#" id="hunterExport">Export - 0</a>
 </div>`

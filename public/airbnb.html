@@ -58,6 +58,8 @@
 
             } else if (window.app.sort_by == 'avg_rating') {
               return (b.avg_rating ? b.avg_rating : 0) - (a.avg_rating ? a.avg_rating : 0)
+            } else if (window.app.sort_by == 'sqm') {
+
             }
           })
 
@@ -70,9 +72,14 @@
 
             if (l.reviews_count >= min_reviews &&
               rating >= min_rating){
+
+              if (window.app.require_sqm && !l.name.match(/sqm/igm)) {
+                return false
+              } 
+
               return true 
             } else {
-              console.log('fail', l)
+              //console.log('fail', l)
               return false
             }
           })
@@ -104,6 +111,7 @@
       <option value="reviews_count">Reviews count</option>
       <option value="avg_rating">Avg rating</option>
     </select>
+    <input type="checkbox" v-model="require_sqm"> Require "sqm"
 
     <div v-if="sorted.length > 100">
       <h1>Showing only first 100 listings.</h1>
