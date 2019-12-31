@@ -12,6 +12,13 @@
   window.onmessage = function(e){
     //if (e.origin == 'https://airbnb.com')
     window.json = JSON.parse(e.data)
+    let reg = /([0-9]+)[ ]?sqm/igm
+
+    for(let l of window.json.listings){
+      l.sqm = reg.exec(l.name)
+      // 0 if not provided
+      l.sqm = l.sqm ? Number(l.sqm) : 0
+    }
 
 
     window.app.sortAndFilter()
@@ -61,13 +68,8 @@
             } else if (window.app.sort_by == 'avg_rating') {
               return (b.avg_rating ? b.avg_rating : 0) - (a.avg_rating ? a.avg_rating : 0)
             } else if (window.app.sort_by == 'by_sqm') {
-              let reg = /([0-9]+)[ ]?sqm/igm
-              let sqm_a = reg.exec(a.name)
-              sqm_a = sqm_a ? Number(sqm_a[1]) : 0
-              let sqm_b = reg.exec(b.name)
-              sqm_b = sqm_b ? Number(sqm_b[1]) : 0
-              console.log("Comparing ", sqm_b, sqm_a)
-              return sqm_b - sqm_a
+
+              return b.sqm - a.sqm
             }
           })
 
@@ -81,7 +83,7 @@
             if (l.reviews_count >= min_reviews &&
               rating >= min_rating){
 
-              if (window.app.require_sqm && !l.name.match(/sqm/igm)) {
+              if (window.app.require_sqm && l.sqm == 0) {
                 return false
               } 
 
