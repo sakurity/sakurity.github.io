@@ -59,7 +59,10 @@
             } else if (window.app.sort_by == 'avg_rating') {
               return (b.avg_rating ? b.avg_rating : 0) - (a.avg_rating ? a.avg_rating : 0)
             } else if (window.app.sort_by == 'sqm') {
-
+              let reg = /([0-9]+)[ ]?sqm/igm
+              let sqm_a = reg.exec(a.name)
+              let sqm_b = reg.exec(b.name)
+              return (sqm_b ? Number(sqm_b[1]) : 0) - (sqm_a ? Number(sqm_a[1]) : 0)
             }
           })
 
@@ -110,6 +113,7 @@
       <option value="price_rev">Price (high to low)</option>
       <option value="reviews_count">Reviews count</option>
       <option value="avg_rating">Avg rating</option>
+      <option value="sqm">By sqm in the name</option>
     </select>
     <input type="checkbox" v-model="require_sqm"> Require "sqm"
 
